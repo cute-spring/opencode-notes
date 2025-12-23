@@ -82,9 +82,10 @@
         - [A. 软裁剪 (Pruning)：旧工具输出清理](#a-软裁剪-pruning旧工具输出清理)
         - [B. 硬压缩 (Summarization)：Agent 驱动的摘要](#b-硬压缩-summarizationagent-驱动的摘要)
   - [4. LLM 集成与模型管理 (LLM Integration)](#4-llm-集成与模型管理-llm-integration)
-    - [4.1 Provider 抽象 (`Provider`)](#41-provider-抽象-provider)
-    - [4.2 模型元数据与选择](#42-模型元数据与选择)
-    - [4.3 UML 视图：Select Model 逻辑](#43-uml-视图select-model-逻辑)
+    - [4.1 为什么选择 Vercel AI SDK？ (Why Vercel AI SDK?)](#41-为什么选择-vercel-ai-sdk-why-vercel-ai-sdk)
+    - [4.2 Provider 抽象 (`Provider`)](#42-provider-抽象-provider)
+    - [4.3 模型元数据与选择](#43-模型元数据与选择)
+    - [4.4 UML 视图：Select Model 逻辑](#44-uml-视图select-model-逻辑)
   - [5. Agent Client Protocol (ACP) 详解](#5-agent-client-protocol-acp-详解)
     - [5.1 协议职责](#51-协议职责)
     - [5.2 会话生命周期](#52-会话生命周期)
@@ -109,8 +110,73 @@
     - [10.3 后端与运行时 (Backend \& Runtime)](#103-后端与运行时-backend--runtime)
     - [10.4 辅助工具与基础设施 (Utilities \& Infra)](#104-辅助工具与基础设施-utilities--infra)
     - [10.5 工程效率与基础设施 (Engineering Excellence \& Infra)](#105-工程效率与基础设施-engineering-excellence--infra)
-
+  - [11. 跨语言架构映射：Python 生态实现方案](#11-跨语言架构映射python-生态实现方案)
+    - [11.1 核心推荐方案：PydanticAI + LiteLLM](#111-核心推荐方案pydanticai--litellm)
+    - [11.2 维度对比：如何实现“高度类似”的效果](#112-维度对比如何实现高度类似的效果)
+    - [11.3 代码示例：Python 版本的“OpenCode 式”实现](#113-代码示例python-版本的opencode-式实现)
+    - [11.4 架构启示](#114-架构启示)
 ---
+
+## 11. 跨语言架构映射：Python 生态实现方案
+
+如果你追求 **Vercel AI SDK** 那种“轻量级、类型安全、协议优先、低抽象成本”的设计哲学，而不是 LangChain 那种“重度框架、多层抽象”的风格，在 Python 生态中，最推荐的方案是 **PydanticAI** 结合 **LiteLLM**。
+
+### 11.1 核心推荐方案：PydanticAI + LiteLLM
+
+*   **PydanticAI**: 由 Pydantic 官方团队开发，它是 Vercel AI SDK 在 Python 界的“灵魂伴侣”。
+*   **LiteLLM**: 负责多模型适配（Model Agnostic），相当于 Vercel AI SDK 的 Provider 层。
+
+### 11.2 维度对比：如何实现“高度类似”的效果
+
+| 维度 | Vercel AI SDK (TS) | Python 对应方案 (PydanticAI + LiteLLM) | 实现机制与好处 |
+| :--- | :--- | :--- | :--- |
+| **统一模型抽象** | `streamText` / `generateText` | **LiteLLM** | LiteLLM 将 100+ 模型转换为 OpenAI 格式。只需一套代码，即可无缝切换 Claude, GPT, DeepSeek。 |
+| **原生工具调用** | `tools` 参数 + `Zod` | **PydanticAI** `Agent(tools=[...])` | PydanticAI 利用 Python 的 Type Hints 和 Pydantic 模型，自动生成 Tool Schema，并处理工具调用循环。 |
+| **类型安全** | Zod | **Pydantic** | 利用 Python 的 Type Hints 确保 LLM 输出完全符合 Python 类定义，提供极佳的 IDE 开发体验。 |
+| **流式处理** | `fullStream` / `textDelta` | **PydanticAI** `stream_text()` | 支持异步生成器 (Async Generator)，实现流式的文本增量和结构化输出。 |
+| **低抽象成本** | "Library, not Framework" | **纯函数式设计** | 极其轻量，没有复杂的“链（Chains）”概念，就是纯粹的 Python 函数和类，调试极其直观。 |
+
+### 11.3 代码示例：Python 版本的“OpenCode 式”实现
+
+如果你想在 Python 中实现类似 OpenCode 的 `explore` Agent，代码实现如下：
+
+```python
+from pydantic import BaseModel
+from pydantic_ai import Agent, RunContext
+from litellm import completion
+
+# 1. 定义结构化输出（类似 Zod）
+class SearchResult(BaseModel):
+    files: list[str]
+    explanation: str
+
+# 2. 定义工具（类似 OpenCode 的 glob/grep）
+def search_code(ctx: RunContext[str], pattern: str) -> list[str]:
+    """在代码库中搜索关键词"""
+    # 这里实现具体的 ripgrep 逻辑
+    return ["file1.py", "file2.py"]
+
+# 3. 创建 Agent（类似 Agent.Info）
+agent = Agent(
+    'openai:gpt-4o', # 配合 LiteLLM 可以用各种模型
+    deps_type=str,
+    result_type=SearchResult,
+    system_prompt="你是一个代码搜索专家...",
+    tools=[search_code]
+)
+
+# 4. 执行决策循环 (Decision Loop)
+async def run():
+    async with agent.run_stream("找一下支付逻辑") as result:
+        async for message in result.stream_text():
+            print(message, end='') # 流式输出
+```
+
+### 11.4 架构启示
+
+1.  **摆脱“黑盒”困境**：PydanticAI 像 Vercel AI SDK 一样，把 **Prompt -> 执行 -> 解析** 的过程透明化了，避免了重型框架常见的抽象层过厚问题。
+2.  **回归语言原生力量**：充分利用 Python 原生的类型系统，让 AI 开发回归到“写正常的代码”上，而不是写“框架配置”。
+3.  **高度的可组合性**：支持函数式编排，使得多智能体协作逻辑可以像 OpenCode 的 `TaskTool` 一样灵活、高效。
 
 ## 1. 执行摘要 (Executive Summary)
 
@@ -1056,7 +1122,27 @@ OpenCode 的上下文管理采用了双层防御机制，既保证了长对话�
 
 OpenCode 的 LLM 层构建在 Vercel AI SDK 之上，提供了强大的模型抽象和动态配置能力。
 
-### 4.1 Provider 抽象 (`Provider`)
+### 4.1 为什么选择 Vercel AI SDK？ (Why Vercel AI SDK?)
+
+在 OpenCode 这种对交互延迟和控制精度要求极高的场景下，选择 Vercel AI SDK 而非重型框架（如 LangChain）主要基于以下考量：
+
+- **统一的模型抽象 (Model Agnostic)**：
+  - **技术价值**：通过统一的 `streamText` 和 `generateText` 接口，屏蔽了不同 Provider（Anthropic, OpenAI, Google 等）在 API 格式上的差异。
+  - **大白话**：它像是一个“万能适配器”。无论底座模型怎么换，上层的业务逻辑（如 Tool 调用、错误处理）基本不需要改动。
+- **原生支持工具调用 (Tool Calling)**：
+  - **技术价值**：SDK 内置了对 `tool-call` 的结构化处理逻辑，能够自动处理 LLM 生成的参数并与本地 TypeScript 函数绑定。
+  - **大白话**：它把大模型的“想干什么”和代码里的“怎么干”无缝接在了一起，不需要我们手写复杂的解析逻辑。
+- **极致的流式处理性能 (Streaming First)**：
+  - **技术价值**：专为流式响应优化，支持毫秒级的首屏渲染（TTFT），这对于 TUI/IDE 这种需要实时反馈的界面至关重要。
+  - **大白话**：让 AI 的回复“秒出”，而不是等它想好了再一大块蹦出来，极大地提升了用户体验。
+- **类型安全与开发者体验 (TS-First)**：
+  - **技术价值**：作为 TypeScript 原生库，它与 Zod 深度集成，确保了从输入 Prompt 到输出结果的全链路类型安全。
+  - **大白话**：写代码时有自动补全，运行前能发现大部分低级错误，维护起来非常省心。
+- **低抽象成本 (Minimalist)**：
+  - **技术价值**：它是一个“库”而非“框架”，没有引入过多的魔术逻辑或黑盒组件，方便开发者进行底层的深度定制。
+  - **大白话**：它很“薄”。我们能清楚地看到每一行代码在干什么，出问题了也很好定位。
+
+### 4.2 Provider 抽象 (`Provider`)
 
 位于 `packages/opencode/src/provider/provider.ts`，负责管理不同厂商的 LLM 集成。
 
@@ -1065,7 +1151,7 @@ OpenCode 的 LLM 层构建在 Vercel AI SDK 之上，提供了强大的模型抽
     - **Anthropic**: 自动注入 Beta Headers (`claude-code-20250219` 等) 以启用新特性。
     - **OpenCode**: 处理自定义鉴权。
 
-### 4.2 模型元数据与选择
+### 4.3 模型元数据与选择
 
 - **models.dev 集成**: 通过 `packages/opencode/src/provider/models.ts` 定期从 `https://models.dev/api.json` 拉取最新的模型元数据（成本、上下文窗口、模态支持等）。
 - **模型选择策略**:
@@ -1073,7 +1159,7 @@ OpenCode 的 LLM 层构建在 Vercel AI SDK 之上，提供了强大的模型抽
     2.  **Agent Config**: Agent 配置中绑定的模型。
     3.  **Fallback**: 最近使用的模型 (`store.recent`) 或 Provider 的默认模型 (`packages/desktop/src/context/local.tsx:171`)。
 
-### 4.3 UML 视图：Select Model 逻辑
+### 4.4 UML 视图：Select Model 逻辑
 
 ```mermaid
 classDiagram
