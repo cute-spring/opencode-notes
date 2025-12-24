@@ -231,12 +231,12 @@ async function resolveModelForTask(taskType: string, agentName?: string) {
 
 ## 5. 生产级深度考量：效能、鲁棒性与组织映射
 
-### 4.1 性能与经济性评估 (Efficiency & Economics)
+### 5.1 性能与经济性评估 (Efficiency & Economics)
 
 - **响应延迟 (Latency)**：将 UI 交互轻量任务分配给小模型，可将延迟从 5-8 秒降低至 1 秒以内。
 - **运营成本 (Economics)**：在典型的开发 Session 中，子代理和总结任务占据了大量的 Token 消耗。协同架构使整体成本可降低 40% - 60%。
 
-### 4.2 关注点分离与故障隔离 (SoC & Isolation)
+### 5.2 关注点分离与故障隔离 (SoC & Isolation)
 
 - **关注点分离 (SoC)**：主代理关注“做什么（Intent）”，子代理关注“怎么找（Execution）”。子代理的思考过程被隔离在独立的子 Session 中，避免了主窗口冗余和 Token 窗口爆炸。
 - **鲁棒性与隔离**：如果子代理崩溃（如长文本溢出），不会影响主代理状态。主代理可捕获错误并决定重试或采用替代路径。
