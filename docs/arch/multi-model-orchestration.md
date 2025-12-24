@@ -164,67 +164,103 @@ export function provider(model: Provider.Model) {
 
 在多模型架构中，最核心的问题是：**在当前这一秒，系统是如何决定调用哪个 LLM 的？** OpenCode 采用了一套基于“上下文上下文”（Context of Context）的动态分发逻辑。
 
-### 4.1 决策维度与优先级
+### 4.1 任务类型判定 (Task Type Detection)
 
-系统在发起任何模型调用前，会经历一个四阶段的决策漏斗：
+系统在处理任何请求前，首先会识别任务的“能级”。这决定了后续是进入高性能通道还是高逻辑通道。
 
-1.  **任务意图识别 (Task Intent Recognition)**：
-    *   **Case**: 如果任务是“对话总结”或“标题生成”。
-    *   **Decision**: 强制路由至 `small_model`（高性能/低成本）。
-2.  **显式代理指令 (Explicit Agent Directive)**：
-    *   **Case**: 用户输入 `@explore` 或主代理调用 `TaskTool(subagent_type="general")`。
-    *   **Decision**: 查找 `agent[subagent_name].model` 配置。
-3.  **持久化 Session 状态 (Persistent Session State)**：
-    *   **Case**: 当前 Session 已经选定了一个模型（通过 `/models` 命令或 UI 切换）。
-    *   **Decision**: 沿用当前 Session 绑定的 `modelID`。
-4.  **配置回退链 (Configuration Fallback Chain)**：
-    *   **Case**: 以上皆无。
-    *   **Decision**: 按照 `Agent Config -> Global Config -> Hardcoded Default` 的顺序寻找。
+#### **判定维度与机制**
 
-### 4.2 决策过程活动图 (Activity Diagram)
+| 任务类型 | 触发源 (Trigger) | 识别逻辑 (Detection Logic) |
+| :--- | :--- | :--- |
+| **辅助任务 (Auxiliary)** | 系统生命周期钩子 | 检查 `assistantMessage.finish` 状态。若需生成 `title` 或 `summary`，自动标记为 `small=true`。 |
+| **显式业务 (Explicit)** | 用户输入 / 插件调用 | 扫描用户输入中的 `@agent` 指令。例如输入 `@explore` 会被解析为 `agent: "explore"`。 |
+| **隐式业务 (Implicit)** | Session 状态机 | 若无显式指令，系统根据 `Session.Info` 中的 `mode` 或 `agent` 字段回退至默认业务 Agent（如 `build`）。 |
+| **维护任务 (Maintenance)** | Token 计数器 | `SessionCompaction.isOverflow()` 实时监控。若 Token 超过模型阈值的 80%，触发压缩任务。 |
+
+#### **UML 任务类型判定流程 (Task Type Detection Flow)**
 
 ```mermaid
 flowchart TD
-    subgraph RD [运行时决策中心 Runtime Dispatcher]
-        Start([开始]) --> Type{判定任务类型}
-        
-        Type -- 辅助任务 --> Small{检查 small_model 配置}
-        Small -- 存在 --> CallSmall[调用小模型]
-        Small -- 不存在 --> CallDefault[使用默认模型]
-        
-        Type -- 业务任务 --> Agent{检查显式 Agent 调用?}
-        
-        Agent -- 是: @agent_name --> AgentBind{检查 Agent 模型绑定}
-        AgentBind -- 存在 --> CallAgent[调用 Agent 指定模型]
-        AgentBind -- 不存在 --> CallGlobal[使用全局默认模型]
-        
-        Agent -- 否: 普通对话 --> SessionBind{Session 是否已绑定?}
-        SessionBind -- 是 --> CallSession[调用 Session 绑定模型]
-        SessionBind -- 否 --> CallGlobalDefault[调用全局默认模型]
-    end
+    Start([收到请求/触发器]) --> Source{来源?}
+    
+    Source -- 用户输入 --> ParseAgent[解析 @Agent 指令]
+    ParseAgent --> HasAgent{包含 @?}
+    HasAgent -- 是 --> TypeBusiness[类型: 业务任务 (显式)]
+    HasAgent -- 否 --> TypeBusinessDefault[类型: 业务任务 (隐式)]
+    
+    Source -- 生命周期钩子 --> CheckState{检查消息状态}
+    CheckState -- 消息刚结束 --> NeedsTitle{需要标题/摘要?}
+    NeedsTitle -- 是 --> TypeAux[类型: 辅助任务]
+    
+    Source -- Token 监控 --> CheckLimit{是否接近阈值?}
+    CheckLimit -- 是 --> TypeMaint[类型: 维护任务 (Compaction)]
+    
+    TypeAux --> RouteSmall[路由至 small_model]
+    TypeBusiness --> RouteAgent[路由至 Agent 指定模型]
+    TypeBusinessDefault --> RouteGlobal[路由至全局默认模型]
+    TypeMaint --> RouteMaint[路由至策略压缩模型]
 ```
 
-### 4.3 实现机制：`Config.get()` 与解析逻辑
+### 4.2 决策路径：从任务到模型 (Decision Funnel)
 
-决策的底层实现位于 `packages/opencode/src/config/config.ts`。系统通过 Zod 模式定义了严密的配置树。在运行时，决策引擎会执行类似下方的解析逻辑：
+一旦任务类型确定，系统进入决策漏斗：
+
+1.  **辅助任务特殊通道**：
+    *   **实现逻辑**：在 `SessionSummary` 中，系统会通过 `Provider.getSmallModel()` 获取配置中的 `small_model`。
+    *   **兜底**：若未配置 `small_model`，则降级使用全局 `model`。
+
+2.  **业务任务路由**：
+    *   **Agent 优先**：检查 `packages/opencode/src/agent/agent.ts` 中定义的 Agent 配置。如果 Agent 绑定了特定模型（如 `explore` 绑定 `gemini-1.5-flash`），则优先使用。
+    *   **Session 粘性**：如果用户通过 `/models` 命令手动指定了模型，该设定会存储在 Session 上下文中，覆盖 Agent 默认值。
+    *   **全局默认**：最后的兜底。
+
+### 4.3 核心实现代码解析
+
+#### **判定与路由的核心逻辑 (`packages/opencode/src/session/summary.ts`)**
 
 ```typescript
-async function resolveModelForTask(taskType: string, agentName?: string) {
-  const config = await Config.get();
+// 辅助任务判定与模型选择
+async function summarizeMessage(input: { messageID: string; messages: MessageV2.WithParts[] }) {
+  // ... 逻辑处理 ...
+  const assistantMsg = messages.find(m => m.info.role === 'assistant')!.info as MessageV2.Assistant;
   
-  // 1. 辅助任务特殊通道
-  if (["title", "summary"].includes(taskType)) {
-    return config.small_model || config.model;
-  }
-  
-  // 2. 代理级覆盖
-  if (agentName && config.agent?.[agentName]?.model) {
-    return config.agent[agentName].model;
-  }
-  
-  // 3. 兜底到全局配置
-  return config.model;
+  // 1. 获取小模型配置 (small_model)
+  const small = await Provider.getSmallModel(assistantMsg.providerID) 
+               ?? await Provider.getModel(assistantMsg.providerID, assistantMsg.modelID);
+
+  // 2. 如果 Agent 有私有模型配置，则使用；否则使用 small 模型
+  const agent = await Agent.get("title");
+  const stream = await LLM.stream({
+    agent,
+    model: agent.model ? await Provider.getModel(agent.model.providerID, agent.model.modelID) : small,
+    small: true, // 关键：标记为辅助任务
+    // ...
+  });
 }
+```
+
+#### **业务循环中的路由逻辑 (`packages/opencode/src/session/prompt.ts`)**
+
+```typescript
+export const loop = fn(Identifier.schema("session"), async (sessionID) => {
+  // ...
+  while (true) {
+    const lastUser = msgs.findLast(m => m.info.role === "user")!.info as MessageV2.User;
+    
+    // 1. 业务 Agent 判定
+    const agent = await Agent.get(lastUser.agent); 
+    
+    // 2. 模型解析逻辑：遵循 Agent -> Global 的覆盖顺序
+    const model = await Provider.getModel(lastUser.model.providerID, lastUser.model.modelID);
+    
+    // 3. 启动处理器
+    const processor = SessionProcessor.create({
+      assistantMessage: { /* ... */ },
+      model, // 传入选定的模型
+      // ...
+    });
+  }
+});
 ```
 
 ---
