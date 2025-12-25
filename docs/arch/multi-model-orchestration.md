@@ -274,8 +274,26 @@ export const loop = fn(Identifier.schema("session"), async (sessionID) => {
 
 ### 5.2 关注点分离与故障隔离 (SoC & Isolation)
 
-- **关注点分离 (SoC)**：主代理关注“做什么（Intent）”，子代理关注“怎么找（Execution）”。子代理的思考过程被隔离在独立的子 Session 中，避免了主窗口冗余和 Token 窗口爆炸。
+- **关注点分离 (SoC)**：主代理关注“做什么（Intent）”，子代理关注“怎么找（Execution）”。子代理的思考过程被隔离在独立的子 Session 中，避免了主窗口冗余 and Token 窗口爆炸。
 - **鲁棒性与隔离**：如果子代理崩溃（如长文本溢出），不会影响主代理状态。主代理可捕获错误并决定重试或采用替代路径。
+
+### 5.3 行业横向对比 (Industry Comparison)
+
+在 2025 年底的 AI IDE 领域，模型分层已成为事实上的行业标准。以下是 OpenCode 的分层策略与行业主流工具的横向对比：
+
+| 工具 | Tier 1 (Decision/Logic) | Tier 2 (Execution/Agent) | Tier 3 (Utility/Latency) |
+| :--- | :--- | :--- | :--- |
+| **OpenCode** | **GPT-5.2 / Claude 4.5 Opus** | **Gemini 3.0 Flash / Sonnet 4.5** | **Gemini 3.0 Flash Lite** |
+| **Claude Code** | Claude 5.0 Opus (Plan Mode) | Claude 4.5 Sonnet | Claude 4.5 Haiku |
+| **Cursor** | o3 / Claude 3.7 (Think Mode) | Claude 4.0 Sonnet | GPT-5 mini / Cursor-small |
+| **Windsurf** | SWE-1.5 / GPT-5.2 | SWE-1 / Claude 4.5 | SWE-1 Lite |
+| **GitHub Copilot**| GPT-5 / Opus 4.1 | GPT-4o / Sonnet 3.7 | o4-mini / Gemini 2.0 Flash |
+
+#### **核心设计共识 (Industry Consensus)**
+
+1.  **“思考”与“执行”的分离**：行业领头羊（如 Cursor, Windsurf）均采用了将“逻辑规划模型”（Tier 1）与“代码操作模型”（Tier 2）解耦的策略。Tier 1 负责生成高层思路，Tier 2 负责具体搬砖。
+2.  **上下文的极端化趋势**：Tier 2 正在追求超大规模原生上下文（如 Gemini 的 10M+ tokens），而 Tier 1 正在追求极长的推理链（CoT），即便上下文受限，只要逻辑足够深即可。
+3.  **自研小模型的崛起**：Cursor (cursor-small) 和 Windsurf (SWE-1 Lite) 均开始使用基于开源模型（如 Llama/Qwen）微调的专用小模型来承载 Tier 3 任务，以追求极致的延迟和成本控制。
 
 ---
 
