@@ -185,15 +185,15 @@ flowchart TD
     
     Source -- 用户输入 --> ParseAgent[解析 @Agent 指令]
     ParseAgent --> HasAgent{包含 @?}
-    HasAgent -- 是 --> TypeBusiness[类型: 业务任务 (显式)]
-    HasAgent -- 否 --> TypeBusinessDefault[类型: 业务任务 (隐式)]
+    HasAgent -- 是 --> TypeBusiness["类型: 业务任务 (显式)"]
+    HasAgent -- 否 --> TypeBusinessDefault["类型: 业务任务 (隐式)"]
     
     Source -- 生命周期钩子 --> CheckState{检查消息状态}
     CheckState -- 消息刚结束 --> NeedsTitle{需要标题/摘要?}
     NeedsTitle -- 是 --> TypeAux[类型: 辅助任务]
     
     Source -- Token 监控 --> CheckLimit{是否接近阈值?}
-    CheckLimit -- 是 --> TypeMaint[类型: 维护任务 (Compaction)]
+    CheckLimit -- 是 --> TypeMaint["类型: 维护任务 (Compaction)"]
     
     TypeAux --> RouteSmall[路由至 small_model]
     TypeBusiness --> RouteAgent[路由至 Agent 指定模型]
