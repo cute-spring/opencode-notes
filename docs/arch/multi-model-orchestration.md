@@ -54,8 +54,8 @@ classDiagram
     class Config {
         +String model
         +String small_model
-        +Map~String, Agent~ agents
-        +get() Instance
+        +Map~String, Agent~ agent
+        +get() ConfigInfo
     }
 
     class Agent {
@@ -274,7 +274,7 @@ export const loop = fn(Identifier.schema("session"), async (sessionID) => {
 
 ### 5.2 关注点分离与故障隔离 (SoC & Isolation)
 
-- **关注点分离 (SoC)**：主代理关注“做什么（Intent）”，子代理关注“怎么找（Execution）”。子代理的思考过程被隔离在独立的子 Session 中，避免了主窗口冗余 and Token 窗口爆炸。
+- **关注点分离 (SoC)**：主代理关注“做什么（Intent）”，子代理关注“怎么找（Execution）”。子代理的思考过程被隔离在独立的子 Session 中，避免了主窗口冗余和 Token 窗口爆炸。
 - **鲁棒性与隔离**：如果子代理崩溃（如长文本溢出），不会影响主代理状态。主代理可捕获错误并决定重试或采用替代路径。
 
 ### 5.3 行业横向对比 (Industry Comparison)
