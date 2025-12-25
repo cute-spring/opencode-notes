@@ -124,7 +124,29 @@ sequenceDiagram
 
 ### 3.1 声明式绑定与逐级回退机制
 
-在 `packages/opencode/src/config/config.ts` 中，模型配置遵循**能力与执行器解耦**的逐级覆盖原则：
+在 `packages/opencode/src/config/config.ts` 中，模型配置遵循**能力与执行器解耦**的逐级覆盖原则。
+
+#### **模型解析优先级 (Model Resolution Priority)**
+
+```mermaid
+flowchart TD
+    Req([请求模型解析]) --> UserOverride{用户手动指定?}
+    UserOverride -- 是 (Session 粘性) --> UseUser[使用用户选择模型]
+    UserOverride -- 否 --> TaskType{任务能级?}
+    
+    TaskType -- 辅助任务 (small=true) --> SmallConfig{配置了 small_model?}
+    SmallConfig -- 是 --> UseSmall[使用 small_model]
+    SmallConfig -- 否 --> GlobalDefault
+    
+    TaskType -- 业务任务 --> AgentBinding{Agent 绑定了模型?}
+    AgentBinding -- 是 --> UseAgent[使用 Agent 专用模型]
+    AgentBinding -- 否 --> GlobalDefault[使用全局默认 model]
+    
+    UseUser --> End([返回解析结果])
+    UseSmall --> End
+    UseAgent --> End
+    GlobalDefault --> End
+```
 
 1.  **Agent 级绑定**：如果 `agent.model` 已定义，则使用该模型。
 2.  **全局默认**：若无 Agent 绑定，回退至全局 `model` 配置。
@@ -145,7 +167,39 @@ sequenceDiagram
 
 ### 3.2 策略驱动的提示词路由 (Strategy Pattern)
 
-在 `packages/opencode/src/session/system.ts` 中，`SystemPrompt.provider()` 将模型视为指令集“方言”的接收者，动态映射最适配的提示词模板：
+在 `packages/opencode/src/session/system.ts` 中，`SystemPrompt.provider()` 将模型视为指令集“方言”的接收者，动态映射最适配的提示词模板。
+
+#### **提示词策略类图 (Prompt Strategy Class Diagram)**
+
+```mermaid
+classDiagram
+    class SystemPrompt {
+        <<Service>>
+        +provider(Model) PromptStrategy
+    }
+    
+    class PromptStrategy {
+        <<Interface>>
+        +getTemplate() String
+    }
+    
+    class ClaudeStrategy {
+        +getTemplate() XML_Template
+    }
+    
+    class GeminiStrategy {
+        +getTemplate() Line_Template
+    }
+    
+    class DefaultStrategy {
+        +getTemplate() Markdown_Template
+    }
+    
+    SystemPrompt ..> PromptStrategy : Creates
+    PromptStrategy <|.. ClaudeStrategy
+    PromptStrategy <|.. GeminiStrategy
+    PromptStrategy <|.. DefaultStrategy
+```
 
 ```typescript
 export function provider(model: Provider.Model) {
@@ -181,24 +235,24 @@ export function provider(model: Provider.Model) {
 
 ```mermaid
 flowchart TD
-    Start([收到请求/触发器]) --> Source{来源?}
+    Start(["收到请求/触发器"]) --> Source{"来源?"}
     
-    Source -- 用户输入 --> ParseAgent[解析 @Agent 指令]
-    ParseAgent --> HasAgent{包含 @?}
-    HasAgent -- 是 --> TypeBusiness["类型: 业务任务 (显式)"]
-    HasAgent -- 否 --> TypeBusinessDefault["类型: 业务任务 (隐式)"]
+    Source -- "用户输入" --> ParseAgent["解析 @Agent 指令"]
+    ParseAgent --> HasAgent{"包含 @?"}
+    HasAgent -- "是" --> TypeBusiness["类型: 业务任务 (显式)"]
+    HasAgent -- "否" --> TypeBusinessDefault["类型: 业务任务 (隐式)"]
     
-    Source -- 生命周期钩子 --> CheckState{检查消息状态}
-    CheckState -- 消息刚结束 --> NeedsTitle{需要标题/摘要?}
-    NeedsTitle -- 是 --> TypeAux[类型: 辅助任务]
+    Source -- "生命周期钩子" --> CheckState["检查消息状态"]
+    CheckState -- "消息刚结束" --> NeedsTitle["需要标题/摘要?"]
+    NeedsTitle -- "是" --> TypeAux["类型: 辅助任务"]
     
-    Source -- Token 监控 --> CheckLimit{是否接近阈值?}
-    CheckLimit -- 是 --> TypeMaint["类型: 维护任务 (Compaction)"]
+    Source -- "Token 监控" --> CheckLimit{"是否接近阈值?"}
+    CheckLimit -- "是" --> TypeMaint["类型: 维护任务 (Compaction)"]
     
-    TypeAux --> RouteSmall[路由至 small_model]
-    TypeBusiness --> RouteAgent[路由至 Agent 指定模型]
-    TypeBusinessDefault --> RouteGlobal[路由至全局默认模型]
-    TypeMaint --> RouteMaint[路由至策略压缩模型]
+    TypeAux --> RouteSmall["路由至 small_model"]
+    TypeBusiness --> RouteAgent["路由至 Agent 指定模型"]
+    TypeBusinessDefault --> RouteGlobal["路由至全局默认模型"]
+    TypeMaint --> RouteMaint["路由至策略压缩模型"]
 ```
 
 ### 4.2 决策路径：从任务到模型 (Decision Funnel)
@@ -275,6 +329,23 @@ export const loop = fn(Identifier.schema("session"), async (sessionID) => {
 ### 5.2 关注点分离与故障隔离 (SoC & Isolation)
 
 - **关注点分离 (SoC)**：主代理关注“做什么（Intent）”，子代理关注“怎么找（Execution）”。子代理的思考过程被隔离在独立的子 Session 中，避免了主窗口冗余和 Token 窗口爆炸。
+
+#### **子代理隔离交互时序 (Subagent Isolation Flow)**
+
+```mermaid
+sequenceDiagram
+    participant Main as Main Session (Build)
+    participant Tool as Tool Dispatcher
+    participant Sub as Sub Session (Explore)
+    
+    Main->>Tool: 调用 @explore (Search Logic)
+    Tool->>Sub: 创建独立 Context (Isolate)
+    Note over Sub: 执行耗时检索/分析
+    Sub-->>Tool: 返回结构化数据
+    Tool-->>Main: 注入结果 (Context Merge)
+    Note over Main: 继续执行主任务
+```
+
 - **鲁棒性与隔离**：如果子代理崩溃（如长文本溢出），不会影响主代理状态。主代理可捕获错误并决定重试或采用替代路径。
 
 ### 5.3 行业横向对比 (Industry Comparison)

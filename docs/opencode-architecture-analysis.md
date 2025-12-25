@@ -44,6 +44,7 @@ OpenCode 是一个专为 AI 辅助编程设计的集成开发环境 (IDE)，其�
 - **5.7 最佳提示词方法论**：体系化工程视角下的 Prompt 推导。
 - **5.8 [Prompt 自动化迭代](./arch/prompt-automation.md)**：从手工业到工业化的 Prompt 演进。
 - **5.9 [多模型协同架构](./arch/multi-model-orchestration.md)**：策略路由与职责分离的深度解析。
+- **5.10 [Agentic RAG 扩展思考](./arch/agentic-rag-insights.md)**：从架构演进中提取的设计模式。
 
 ### 6. [技术栈与生态映射](./arch/ecosystem.md)
 工程实践参考：
