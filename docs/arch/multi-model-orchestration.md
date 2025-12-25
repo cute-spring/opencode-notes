@@ -18,28 +18,28 @@ OpenCode 并不是所有任务都由同一个“全能”模型处理，而是�
 
 ### 1.1 三层算力模型定义 (Tiered Compute Model)
 
-系统按任务的本质特征将其划分为三个能级，并为其配置差异化的模型策略：
+系统按任务的本质特征将其划分为三个能级，并为其配置差异化的模型策略（已更新至 2025 年 Q4 最新主流模型）：
 
-| 层次 | 核心角色 | 典型任务 | 推荐模型特征 |
+| 层次 | 核心角色 | 典型任务 | 推荐模型特征 (2025 最新) |
 | :--- | :--- | :--- | :--- |
-| **Tier 1: 决策层** | **主代理 (Primary)** | 全局规划、代码重构、逻辑推理 | SOTA 模型（如 Claude 3.5 Opus/Sonnet, GPT-4o） |
-| **Tier 2: 执行层** | **子代理 (Subagent)** | 代码库检索、文档研究、多步搜索 | 中型模型（如 Claude Haiku, Gemini Flash, GPT-4o-mini） |
-| **Tier 3: 辅助层** | **实用型 (Utility)** | 标题生成、对话总结、上下文压缩 | 小型模型（如 Gemini Flash, Qwen-7B, GLM-4-Flash） |
+| **Tier 1: 决策层** | **主代理 (Primary)** | 全局规划、代码重构、复杂逻辑推理 | **顶级推理模型**：OpenAI o3/o4-mini, Claude 3.7 [R], Gemini 2.5 Pro (Deep Think), Llama 4 Maverick |
+| **Tier 2: 执行层** | **子代理 (Subagent)** | 代码库检索、多步工具调用、长文本研究 | **高性能中型模型**：Claude 3.7 Sonnet, Gemini 2.5 Flash, GPT-4o, Mistral Medium 3 |
+| **Tier 3: 辅助层** | **实用型 (Utility)** | 标题生成、对话总结、数据格式化 | **极速小型模型**：Gemini 2.5 Flash Lite, Llama 4 Scout, Qwen-2.5-7B-Instruct, GLM-4-9B-Flash |
 
 ### 1.2 核心角色职责映射
 
 - **主代理 (Total Contractor)**：
     - **代表**：`Build`, `Plan`
     - **职责**：处理高层意图理解、全局规划。
-    - **核心价值**：确保逻辑的严密性与全局一致性。
+    - **核心价值**：利用 **o3/Claude 3.7 [R]** 等具备“深度思考 (Reasoning)”能力的模型，确保逻辑的严密性与全局一致性。
 - **子代理 (Specialized Worker)**：
     - **代表**：`General`, `Explore`
     - **职责**：执行特定领域的繁重任务（如全文扫描、文档研究）。
-    - **核心价值**：通过封装工具调用，隔离复杂性。
+    - **核心价值**：通过 **Gemini 2.5 Flash** 或 **Llama 4** 的长上下文窗口（1M-10M tokens），隔离复杂性。
 - **实用型小模型 (Utility Cavalry)**：
     - **配置项**：`small_model`
     - **职责**：处理低逻辑要求的文本转换。
-    - **核心价值**：实现秒级交互，极大降低 Token 消耗。
+    - **核心价值**：利用 **Llama 4 Scout** 或 **Gemini Flash Lite** 实现毫秒级交互，极大降低 Token 消耗。
 
 ---
 
