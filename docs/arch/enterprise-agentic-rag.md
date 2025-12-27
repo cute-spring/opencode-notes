@@ -101,15 +101,17 @@ sequenceDiagram
     M->>G: 创建子任务 (携带用户 Identity)
     G->>R: 启动检索 Agent (挂载 Scoped Context)
     
-    loop 迭代搜索
+    loop 迭代搜索 (Max N=5)
         R->>T: 发起调用 (如: search_jira)
         T->>T: 自动注入 User Token / Filter
         T-->>R: 返回原始数据 (受限子集)
         R->>C: 提交初步事实摘要
         C->>C: 校验完备性 & 权限边界
-        alt 证据不足
+        alt 证据不足 (Retry)
             C-->>R: 指令: 补充 Confluence 文档搜索
-        else 通过
+        else 超过最大重试 (Give Up)
+            C-->>M: 状态: 无法回答 (Honest Fallback)
+        else 通过 (Pass)
             C-->>M: 返回高置信度事实
         end
     end
@@ -226,6 +228,62 @@ TaskResult（子 → 主）建议结构：
 
 与 OpenCode 主子 Agent 委派实现的对齐，可参考 [agents.md](agents.md)。
 
+### 3.7 交互模式增强：歧义消解与澄清回路 (Ambiguity Handler Pattern)
+
+在企业场景中，用户指令往往隐含上下文或存在歧义。为了避免 Agent 在错误方向上浪费 Token，必须引入显式的 **“澄清回路 (Clarification Loop)”**。
+
+- **机制**：
+    1.  **歧义检测**：Query Classifier 输出 `ambiguity_score`。
+    2.  **阈值控制**：若 `score > Threshold`，系统暂停检索，进入澄清模式。
+    3.  **反向提问**：生成“澄清选项卡 (Clarification Card)”返回给前端，要求用户确认。
+- **场景示例**：
+    - 用户：“那个项目挂了？”
+    - 系统（澄清卡片）：“检测到多个项目存在异常，请明确您是指：
+        - [A] **Project Alpha** (CI/CD 构建失败)
+        - [B] **Project Beta** (生产环境 5xx 告警)”
+
+#### 3.7.1 交互流程图：歧义消解闭环 (Clarification Loop Diagram)
+
+本流程展示了当用户输入存在歧义（如多义词、上下文缺失）时，系统如何通过“暂停-澄清-恢复”的机制来确保检索的准确性。
+
+```mermaid
+flowchart TD
+    %% 样式定义
+    classDef user fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef system fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+    classDef decision fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,stroke-dasharray: 5 5;
+    classDef ui fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px;
+
+    Start((开始)) --> U1["用户输入: '项目挂了'"]
+    U1 --> C1["Query Classifier: 意图与歧义分析"]
+    
+    C1 --> D1{"歧义分 > 阈值?"}
+    
+    %% 正常路径
+    D1 -- "No (明确)" --> R1["进入标准 RAG 检索流程"]
+    
+    %% 澄清路径
+    D1 -- "Yes (模糊)" --> G1["生成澄清选项卡 (Clarification Card)\n候选意图 A: CI/CD\n候选意图 B: 生产告警"]
+    G1 --> UI1["前端渲染: 交互式澄清卡片"]
+    
+    UI1 --> U2{"用户行为?"}
+    
+    U2 -- "选择 A 或 B" --> S1["注入消歧上下文 (Context Injection)"]
+    S1 --> R1
+    
+    U2 -- "补充新信息" --> C1
+    
+    U2 -- "取消/忽略" --> R2["按默认/高频意图执行 (Best Effort)"]
+    
+    R1 --> End((输出最终回答))
+    R2 --> End
+
+    class U1,U2 user
+    class C1,R1,R2,G1,S1 system
+    class D1 decision
+    class UI1 ui
+```
+
 ---
 
 ## 十一、 落地清单：从 Naive RAG 演进到企业级 Agentic RAG
@@ -268,12 +326,43 @@ Agentic RAG 由于存在循环迭代，Token 消耗具有不可预测性。
 
 - **能级预算 (Token Budgeting)**：为每个 Session 设置 `Hard Limit` 和 `Soft Limit`。
 - **用户组配额**：通过 `Auth Gateway` 实现针对不同用户组的速率限制 (Rate Limiting) 和总额配额。
-- **熔断机制**：当循环迭代超过 5 轮且 `Critic` 仍不满意时，强制触发 **“人工介入 (Escalation)”**。
+- **熔断机制与诚实回退 (Circuit Breaker & Honest Fallback)**：当循环迭代超过 5 轮且 `Critic` 仍不满意时，触发 **“诚实回退”**：终止检索，向用户明确回复“无法从现有授权信息源中找到答案”，并记录“知识缺口 (Knowledge Gap)”供后续优化，而非强行生成。仅在极高危场景下才触发人工介入。
 
 ### 4.3 多级缓存策略 (Multi-level Caching)
 1.  **语义缓存 (Semantic Cache)**：在 `API Gateway` 层级，对高度相似的问题直接返回脱敏答案。
 2.  **检索块缓存 (Chunk Cache)**：在 `Tool` 层级缓存常用的文档块。
 3.  **Prompt 缓存**：利用模型厂商（如 Anthropic/OpenAI）的 Prompt Cache 技术，减少长上下文（Long Context）下的重复计费。
+
+### 4.4 分层记忆架构：从 Session 到 Profile (Hierarchical Memory)
+
+企业级 Agent 的核心壁垒在于“越用越懂你”。建议从单一的会话记忆升级为三层记忆架构：
+
+1.  **L1 短期记忆 (Session Context)**：当前会话的 `messages[]`，负责维持多轮对话的连贯性。
+2.  **L2 实体记忆 (Entity Memory)**：针对特定项目、产品或术语的共享知识缓存。
+    *   *示例*：“Project Apollo” = “新一代计费系统重构项目”。
+    *   *价值*：避免每次提及专有名词都需要重新检索基础背景。
+3.  **L3 长期画像 (User Profile)**：用户的技术栈偏好、角色职责与常用工具。
+    *   *实现*：在 Session 结束时，通过后台 Agent 提炼 User Facts 并存入 `ProfileStore`。
+    *   *场景*：如果用户被标记为“Java 专家”，Agent 在解释代码时将自动跳过基础语法，直接切入架构细节。
+
+#### 4.4.1 分层记忆架构图 (Hierarchical Memory Diagram)
+
+```mermaid
+graph TD
+    subgraph Memory_System ["分层记忆系统 (Memory System)"]
+        L1["L1: Session Context (Redis)"]
+        L2["L2: Entity Memory (VectorDB)"]
+        L3["L3: User Profile (SQL/NoSQL)"]
+    end
+    
+    Agent["Main Agent"] <--> L1
+    Agent <--> L2
+    Agent <--> L3
+    
+    SessionEnd["会话结束"] -->|提炼| Extractor["Profile Extractor Agent"]
+    Extractor -->|更新| L2
+    Extractor -->|更新| L3
+```
 
 ---
 
@@ -606,6 +695,48 @@ QA/Verifier 的目标不是“再生成一次答案”，而是输出可执行�
 - 若存在 `missing_queries[]`，触发一轮补证并行查询。
 - 若补证后仍 fail，则输出带不确定性说明的受控回复（宁可承认无知，不可产生幻觉）。
 
+### 6.3 诚实性协议 (Honesty Protocol)
+
+企业级 AI 的信任建立在“知之为知之，不知为不知”的基础上。系统应遵循以下**诚实回退 (Honest Fallback)** 协议：
+
+1.  **明确的拒绝信号**：当检索结果为空或置信度低于阈值（如 < 0.4）时，严禁使用模型自带的知识进行“猜测”或“补全”。
+2.  **标准回退话术**：回复应包含三个要素：
+    *   **承认无知**：“基于您当前的权限和已有数据，我无法找到确切答案。”
+    *   **解释原因**：“相关文档可能未收录，或属于未授权访问范围。”
+    *   **建设性指引**：“建议联系 [HR 部门] 或查询 [Confluence 空间 X]。”
+3.  **负样本价值**：所有的“诚实回退”都应被标记为**高价值负样本**，用于后续优化检索策略或补充知识库。
+
+### 6.4 进化机制：在线反馈闭环 (Online Feedback Loop)
+
+系统上线不是终点，而是进化的起点。必须建立**自动化的反馈学习闭环**：
+
+1.  **交互式反馈**：在 API 响应中植入 `trace_id`，支持前端对每条回答进行 `Thumbs Up/Down` 及文本评价。
+2.  **错题集自动归档**：
+    *   **Negative Feedback**：用户点踩或显式纠正的会话，自动归档至“错题集 (Negative Sample Store)”。
+    *   **Honest Fallback**：系统主动认怂的会话，归档为“知识缺口 (Knowledge Gaps)”。
+3.  **价值闭环**：
+    *   **短期**：架构师每周审查 Top 10 错题，快速修复 Prompt 或补充文档。
+    *   **长期**：累积数据用于 DPO (Direct Preference Optimization) 微调，让模型学习企业的特定偏好。
+
+#### 6.4.1 在线反馈闭环图 (Feedback Loop Diagram)
+
+```mermaid
+flowchart LR
+    U["用户交互"] -->|Thumbs Down / Correction| S["错题集 (Negative Samples)"]
+    sys["系统"] -->|Honest Fallback| G["知识缺口 (Knowledge Gaps)"]
+    
+    S --> R["专家审查 / 自动评估"]
+    G --> R
+    
+    R -->|Update| K["知识库补充"]
+    R -->|Few-shot| P["Prompt 优化"]
+    R -->|DPO| M["模型微调"]
+    
+    K --> sys
+    P --> sys
+    M --> sys
+```
+
 ---
 
 ## 七、 工程实践建议与设计模式
@@ -614,13 +745,94 @@ QA/Verifier 的目标不是“再生成一次答案”，而是输出可执行�
 - **定义**：在返回答案前，后台并行触发多个检索策略（如关键词、向量、知识图谱 / Knowledge Graph, KG），并由 Agent 进行交叉比对。
 
 ### 2. 模式提取：确定性回退 (Deterministic Fallback)
-- **定义**：当 Agent 尝试 N 轮仍无法获得事实时，强制转向“人工协作 (HITL)”或返回受控回复。
-- **哲学**：**宁可承认无知，不可产生幻觉**。
+- **定义**：当 Agent 尝试 N 轮仍无法获得事实时，系统强制终止推理，直接返回预设的“诚实回退”话术，拒绝强行生成。
+- **哲学**：**宁可承认无知，不可产生幻觉**。企业的信任建立在“不乱说”的基础上。
 
 ### 3. 能级分配 (Compute Tiering)
 - **Tier 3 (意图分流 / Query Routing)**：使用高速低成本模型做分类、Query 改写与缓存命中判定（如 Claude Haiku 4.5 / Gemini 3 Flash / OpenAI o4-mini）。
 - **Tier 2 (检索与清洗 / Retrieval & Normalization)**：使用中等能级模型做多步检索计划、结构化抽取、去噪摘要与格式归一（如 Claude Sonnet 4.5 / Gemini 3 Flash（Thinking）/ OpenAI o4-mini）。
 - **Tier 1 (决策与合成 / Synthesis & Verification)**：仅在最终阶段使用最高能级模型做事实综合、冲突仲裁与引用门禁下的严格核对（如 OpenAI o3（或 o3-pro）/ Claude Opus 4.5 / Gemini 3 Pro（或 Deep Think））。
+
+#### 3.0 全链路交互与路由架构图 (End-to-End Interaction & Routing Architecture)
+
+该流程图将**前端交互（歧义消解）**与**后端路由（能级跃迁）**进行了完整融合，展示了从用户输入到最终响应的端到端数据流。
+
+```mermaid
+flowchart TD
+    %% 样式定义
+    classDef user fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef router fill:#f9f9f9,stroke:#666,stroke-dasharray: 5 5;
+    classDef fast fill:#e6f3ff,stroke:#3399ff,stroke-width:2px;
+    classDef main fill:#e6fffa,stroke:#00cc99,stroke-width:2px;
+    classDef escalate fill:#fff0f0,stroke:#ff6666,stroke-width:2px;
+    classDef ui fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px;
+    classDef db fill:#eee,stroke:#333,stroke-width:1px,stroke-dasharray: 2 2;
+
+    %% 1. 用户交互与歧义处理层
+    subgraph Interaction_Layer ["1. 交互与预处理 (Interaction Layer)"]
+        direction TB
+        U1["用户输入"] --> C1["Query Classifier"]
+        C1 --> D1{"歧义分 > 阈值?"}
+        
+        %% 澄清回路
+        D1 -- "Yes (模糊)" --> G1["生成澄清卡片 (Clarification Card)"]
+        G1 --> UI1["前端交互: 用户选择/补充"]
+        UI1 -->|Context注入| C1
+        
+        %% 明确路径
+        D1 -- "No (明确)" --> Router["智能路由器 (Smart Router)"]
+    end
+
+    %% 2. 路由与执行层
+    subgraph Execution_Layer ["2. 路由与执行层 (Execution Layer)"]
+        direction TB
+        
+        Router -- "简单事实" --> Fast["Tier 3: Fast Lane\n(Haiku/Flash)"]
+        Router -- "复杂分析" --> Main["Tier 2: Main Lane\n(Sonnet/o4-mini)"]
+        Router -- "高危/仲裁" --> Escalate["Tier 1: Escalation\n(Opus/o3)"]
+
+        %% 跃迁逻辑
+        Fast -.->|"质量不足"| Main
+        Main -.->|"冲突/幻觉"| Escalate
+    end
+    
+    %% 3. 数据与工具层
+    subgraph Data_Layer ["3. 数据支撑 (Data Plane)"]
+        KB[(向量知识库)] -.-> Fast
+        Tools[("工具/API")] -.-> Main
+        Audit[("审计日志")] -.-> Escalate
+    end
+
+    %% 4. 输出层
+    subgraph Output_Layer ["4. 输出层 (Output)"]
+        Fast --> Guard["安全合规过滤"]
+        Main --> Guard
+        Escalate --> Guard
+        Guard --> Response["最终响应"]
+    end
+    
+    %% 5. 记忆系统 (新增模块)
+    subgraph Memory_System ["🧠 记忆升级：懂业务，更懂用户"]
+        direction TB
+        L3["L3: User Profile (用户偏好/角色)"]
+        L2["L2: Entity Memory (业务术语/项目)"]
+    end
+
+    %% 记忆注入路径
+    L3 -.->|个性化 Prompt| C1
+    L2 -.->|术语消歧| C1
+    L3 -.->|路由权重调整| Router
+    L2 -.->|业务上下文| Main
+
+    class U1,UI1 user
+    class C1,Router router
+    class Fast fast
+    class Main main
+    class Escalate escalate
+    class G1 ui
+    class KB,Tools,Audit db
+    class L2,L3 main
+```
 
 #### 3.1 流程可视化：动态路由与能级跃迁 (Dynamic Routing & Escalation Flow)
 
