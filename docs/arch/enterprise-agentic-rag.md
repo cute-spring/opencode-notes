@@ -9,6 +9,7 @@
     - [2. 价值解构](#2-价值解构)
   - [二、 系统架构总览 (System Architecture Overview)](#二-系统架构总览-system-architecture-overview)
     - [2.1 核心架构组件图与模式解析](#21-核心架构组件图与模式解析)
+    - [2.2 Agent 架构选型：编译型 vs. 解释型 (Fundamental Choice)](#22-agent-架构选型编译型-vs-解释型-fundamental-choice)
   - [三、 主体设计实现细节 (Implementation Details)](#三-主体设计实现细节-implementation-details)
     - [3.1 权限锚定与 Token 穿透实现](#31-权限锚定与-token-穿透实现)
       - [1. OAuth Token 的安全路由](#1-oauth-token-的安全路由)
@@ -70,7 +71,14 @@
     - [7.5 架构演进：引入 Agentic RAG 动态循环 (The Agentic Loop)](#75-架构演进引入-agentic-rag-动态循环-the-agentic-loop)
       - [7.5.1 增强版架构图：路由 + 智能体循环 (Router + Agentic Loop)](#751-增强版架构图路由--智能体循环-router--agentic-loop)
       - [7.5.2 核心差异点解析](#752-核心差异点解析)
-      - [7.5.3 循环机制深度剖析 (Deep Dive into the Loop)](#753-循环机制深度剖析-deep-dive-into-the-loop)
+      - [7.5.3 智能体核心五要素 (The 5 Pillars of Agentic RAG)](#753-智能体核心五要素-the-5-pillars-of-agentic-rag)
+    - [7.6 多智能体协同模式 (A2A Patterns in RAG)](#76-多智能体协同模式-a2a-patterns-in-rag)
+      - [7.6.1 A2A 多智能体协作模式图 (A2A Collaboration Patterns)](#761-a2a-多智能体协作模式图-a2a-collaboration-patterns)
+    - [7.7 A2A 与 MCP：适用场景与演进关系 (A2A vs. MCP Scenarios)](#77-a2a-与-mcp适用场景与演进关系-a2a-vs-mcp-scenarios)
+      - [1. 适用场景对比](#1-适用场景对比)
+      - [7.7.1 MCP 协议连接架构图 (MCP Architecture)](#771-mcp-协议连接架构图-mcp-architecture)
+      - [2. 演进路线：从“孤岛”到“联邦”](#2-演进路线从孤岛到联邦)
+      - [7.7.2 A2A + MCP 融合演进图 (Evolution: Tools to Organization)](#772-a2a--mcp-融合演进图-evolution-tools-to-organization)
       - [7.5.4 实战演练：供应商风险评估场景 (Scenario Walkthrough)](#754-实战演练供应商风险评估场景-scenario-walkthrough)
       - [7.5.5 安全与熔断机制 (Safety \& Circuit Breaking)](#755-安全与熔断机制-safety--circuit-breaking)
   - [八、 技术栈选型与推荐 (Tech Stack Selection \& Recommendations)](#八-技术栈选型与推荐-tech-stack-selection--recommendations)
@@ -159,6 +167,20 @@ graph TD
 | **Auth Gateway (PEP)** | **Proxy (代理) / Interceptor (拦截器) 模式** | 在工具调用链中强制注入身份令牌或过滤器，实现权限闭环。 |
 | **Tool Registry** | **Registry (注册表) 模式** | 集中管理工具元数据，解耦工具定义与调用逻辑。 |
 | **Critic (Verifier)** | **Chain of Responsibility (责任链) 模式** | 作为验证环节，决定任务是否可以进入下一阶段或需要重试。 |
+
+### 2.2 Agent 架构选型：编译型 vs. 解释型 (Fundamental Choice)
+
+在企业级 RAG 落地中，首要决策是选择 Agent 的“大脑”如何驱动流程。
+
+| 特性 | **编译型 Agent (Compiled / Workflow)** | **解释型 Agent (Interpreted / Autonomous)** |
+| :--- | :--- | :--- |
+| **核心逻辑** | 流程由开发者预定义的 DAG 或状态机驱动。 | 流程由 LLM 在运行时根据目标动态规划。 |
+| **可预测性** | **极高**。执行路径确定，易于测试与审计。 | **较低**。面对同样问题可能产生不同路径。 |
+| **灵活性** | **较低**。处理非预期输入需手动增加分支。 | **极高**。能处理模糊、多步骤的复杂探索任务。 |
+| **主流框架** | LangGraph (StateGraph), Semantic Kernel (Pipelines) | ReAct, BabyAGI, AutoGPT |
+| **适用场景** | **标准业务 SOP**、高合规要求的审批流、固定步骤的报表提取。 | **开放式研究**、跨系统故障排查、高度不确定的信息寻踪。 |
+
+**决策建议**：企业 RAG 推荐采用 **“外层编译 + 内层解释”** 的混合模式。即用编译型架构锚定大的业务阶段（如：鉴权 -> 检索 -> 验证 -> 汇总），而在“检索”阶段允许 Agent 解释型地动态调用工具。
 
 ---
 
@@ -346,6 +368,9 @@ flowchart LR
 当数据源扩展到内部/外部 REST API 与 MCP 工具时，主 Agent 最大的风险来自“工具发现与参数填充”不稳定。
 - **Adapter (适配器) 模式**：通过 `Tool Card` 将异构的接口（REST, MCP, GraphQL）适配成统一的结构。
 - **Command (命令) 模式**：每个 `Tool Card` 封装了一个可执行的指令及其元数据。
+
+**核心演进：引入 MCP (Model Context Protocol)**
+在企业级集成中，强烈建议采用 **MCP** 作为标准化的适配协议。MCP 允许开发者一次性定义数据源连接器，即可被多种不同的 Agent 框架（如 PydanticAI, LangChain, Claude Desktop）直接复用。这不仅是适配器模式的最佳实践，更是企业建立“资产库级”工具生态的基础。
 
 每个工具卡片描述一个可调用能力，并以结构化 schema 约束输入输出：
 
@@ -1499,21 +1524,179 @@ flowchart TD
 | **纠错能力** | 弱（依靠最终的 Rerank/Filter） | **强（Self-Correction）**<br/>发现查出来的文档无关，自动换关键词重查 |
 | **适用场景** | 事实问答、标准作业 | 复杂归因、跨文档推理、模糊探索 |
 
-#### 7.5.3 循环机制深度剖析 (Deep Dive into the Loop)
+#### 7.5.3 智能体核心五要素 (The 5 Pillars of Agentic RAG)
 
-Agentic RAG 的强大之处在于其内部状态流转。以下是关键环节的详细设计：
+Agentic RAG 的强大之处在于其内部状态流转与核心模块的协同。以下是支撑动态循环的五大支柱：
 
-1.  **规划与思考 (Thought/Plan)**：
-    *   **Scratchpad (思维草稿纸)**：Agent 维护一个隐式的 JSON/Markdown 缓冲区，记录已获知的事实和待解决的子问题。
+1.  **规划 (Planning - 任务拆解与逻辑推理)**：
+    *   **思维链 (CoT)**：Agent 维护一个隐式的 JSON/Markdown 缓冲区（Scratchpad (思维草稿纸)），记录已获知的事实和待解决的子问题。
     *   **动态分解**：遇到大问题（如“分析 A 公司的财务健康度”），Agent 会将其拆解为“查营收”、“查利润”、“查负债”等原子步骤。
+    *   **自我修正规划**：如果第一步检索失败，Agent 会重新生成 Plan，而不是盲目重试。
 
-2.  **行动 (Act) - 既然是 RAG，怎么 Act？**：
-    *   **参数化检索**：Agent 不再只是做语义搜索，而是生成精确的过滤条件（如 `year=2024`, `category=finance`）。
-    *   **多工具调用**：Agent 可以先调用 `list_files` 摸清目录结构，再调用 `read_file` 精读特定文档。
+2.  **记忆 (Memory - 上下文与经验留存)**：
+    *   **短期记忆 (Short-term)**：存储当前 Loop 的推理链条、已尝试的关键词和工具执行结果，防止死循环。
+    *   **长期记忆 (Long-term/Profile)**：利用 `L3 User Profile`（见 7.4 架构图），记住用户的偏好（如“更喜欢表格形式”）和特定业务领域的缩略语含义。
 
-3.  **反思 (Reflect) - 避免“傻瓜式”执行**：
-    *   **空结果处理**：如果检索返回为空，线性 RAG 会直接回答“不知道”；Agentic RAG 会反思：“是不是关键词太严格了？尝试去掉日期限制重试。”
-    *   **矛盾检测**：发现两份文档数据不一致时，Agent 会生成一个新的 `Verification Task` 去寻找第三个来源。
+3.  **工具使用 (Tool Usage - 动态发现与标准化)**：
+    *   **参数化检索**：Agent 生成精确的过滤条件（如 `year=2024`, `category=finance`）。
+    *   **MCP 协议集成**：采用 **Model Context Protocol (MCP)** 作为标准适配器，实现工具的一次定义、多处复用，降低 Agent 与异构数据源（Jira, Git, SQL）的耦合。
+
+4.  **反思 (Reflection - 质量守门人)**：
+    *   **空结果反思**：如果检索返回为空，Agent 会反思：“是不是关键词太严格了？尝试去掉日期限制重试。”
+    *   **矛盾检测**：发现两份文档数据不一致时，Agent 会生成一个新的 `Verification Task` 去寻找第三个来源（即 2.1 节中的 **Critic 模式**）。
+
+5.  **协作 (Collaboration - 多智能体协同模式)**：
+    *   在复杂任务中，单一 Agent 可能过载。此时需引入多智能体模式（见 7.6 节），如由一个“研究员 Agent”负责找数据，一个“审计员 Agent”负责核实，最后由“撰写员 Agent”生成报告。
+
+### 7.6 多智能体协同模式 (A2A Patterns in RAG)
+
+当企业 RAG 任务的广度（数据源多）与深度（推理链长）超过单一模型处理极限时，推荐采用 **A2A (Agent-to-Agent)** 模式：
+
+| 模式名称 | 结构描述 | 适用场景 |
+| :--- | :--- | :--- |
+| **主从模式 (Master-Worker)** | 主编排器拆解任务，分发给多个专项 Worker（如 SQL-Agent, Doc-Agent）。 | 需要跨多个异构系统（数据库 + 文档库）检索。 |
+| **流水线模式 (Sequential)** | 上一个 Agent 的输出作为下一个 Agent 的输入（如 意图解析 -> 检索 -> 事实核实 -> 润色）。 | 有明确阶段性交付物的任务（如 合规性审查报告）。 |
+| **并行模式 (Parallel/Voting)** | 多个 Agent 并行执行相同任务，通过“多数票”或“仲裁者”决定最终答案。 | 对准确率要求极高的金融或法律咨询场景。 |
+
+#### 7.6.1 A2A 多智能体协作模式图 (A2A Collaboration Patterns)
+
+```mermaid
+graph TD
+    %% 样式定义
+    classDef master fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef worker fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+    classDef flow fill:#fff3e0,stroke:#ef6c00,stroke-width:2px;
+
+    subgraph Master_Worker ["(1) 主从模式 (Master-Worker)"]
+        M1["主编排器 (Orchestrator)"] --> W1["SQL 专家 (SQL Agent)"]
+        M1 --> W2["文档专家 (Doc Agent)"]
+        M1 --> W3["代码专家 (Code Agent)"]
+    end
+
+    subgraph Sequential_Flow ["(2) 流水线模式 (Sequential)"]
+        S1["意图解析 (Parser)"] --> S2["多步检索 (Retriever)"]
+        S2 --> S3["事实核实 (Verifier)"]
+        S3 --> S4["摘要生成 (Summarizer)"]
+    end
+
+    subgraph Parallel_Voting ["(3) 并行/仲裁模式 (Parallel/Voting)"]
+        V_In["复杂问题"] --> VA1["Agent A (分析)"]
+        V_In --> VA2["Agent B (分析)"]
+        V_In --> VA3["Agent C (分析)"]
+        VA1 --> V_Judge["仲裁员 (Judge/Aggregator)"]
+        VA2 --> V_Judge
+        VA3 --> V_Judge
+    end
+
+    class M1 master
+    class W1,W2,W3,S1,S2,S3,S4,VA1,VA2,VA3 worker
+    class V_Judge flow
+```
+
+### 7.7 A2A 与 MCP：适用场景与演进关系 (A2A vs. MCP Scenarios)
+
+在构建 Agentic RAG 时，开发者常混淆 A2A (Agent-to-Agent) 与 MCP (Model Context Protocol)。它们的本质区别在于：**A2A 解决的是“如何分工”，而 MCP 解决的是“如何连接”。**
+
+#### 1. 适用场景对比
+
+| 维度 | **A2A (多智能体协同)** | **MCP (模型上下文协议)** |
+| :--- | :--- | :--- |
+| **本质** | **组织架构**：解决逻辑深度与分工。 | **通信标准**：解决连接广度与互操作性。 |
+| **核心场景** | **复杂推理与仲裁**：如“对比两份财报并生成风险报告”。需要研究员找数据，审计员找冲突。 | **工具集成与标准化**：如“让 Agent 具备读写 GitHub/SQL 的能力”。不需要关心具体实现，只关心接口。 |
+| **解决痛点** | 解决单一模型上下文过长、逻辑混乱、容易“顾此失彼”的问题。 | 解决“为每个模型/框架重复编写工具胶水代码”的工程浪费问题。 |
+| **协作对象** | **Agent <-> Agent** (逻辑层) | **Model <-> Tool/Data** (协议层) |
+
+#### 7.7.1 MCP 协议连接架构图 (MCP Architecture)
+
+```mermaid
+graph LR
+    %% 样式定义
+    classDef client fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef protocol fill:#f9f9f9,stroke:#666,stroke-dasharray: 5 5;
+    classDef server fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+    classDef tool fill:#fff3e0,stroke:#ef6c00,stroke-width:2px;
+
+    subgraph MCP_Client_Layer ["MCP 客户端 (AI Agent / Framework)"]
+        Agent["AI Agent (e.g. Claude, PydanticAI)"]
+    end
+
+    subgraph MCP_Protocol ["标准化协议 (JSON-RPC over SSE/Stdio)"]
+        Proto["MCP Standard\n(Resources, Prompts, Tools)"]
+    end
+
+    subgraph MCP_Server_Layer ["MCP 服务端 (Connectors)"]
+        S_Git["GitHub Server"]
+        S_SQL["Postgres Server"]
+        S_Files["Local Files Server"]
+    end
+
+    subgraph Real_World ["物理世界 (Data & APIs)"]
+        Repo[("GitHub Repos")]
+        DB[("Database")]
+        Disk[("File System")]
+    end
+
+    Agent <--> Proto
+    Proto <--> S_Git
+    Proto <--> S_SQL
+    Proto <--> S_Files
+
+    S_Git --- Repo
+    S_SQL --- DB
+    S_Files --- Disk
+
+    class Agent client
+    class Proto protocol
+    class S_Git,S_SQL,S_Files server
+    class Repo,DB,Disk tool
+```
+
+#### 2. 演进路线：从“孤岛”到“联邦”
+
+企业级 Agent 架构的成熟标志是两者的深度融合：
+1.  **第一阶段 (孤岛)**：硬编码工具，单 Agent 处理所有逻辑。
+2.  **第二阶段 (工具标准化)**：引入 **MCP**。将内部数据库、Jira、Git 等抽象为标准的 MCP Server。Agent 能够即插即用这些工具。
+3.  **第三阶段 (组织工程化)**：引入 **A2A**。在 MCP 提供的标准化工具能力之上，构建具有角色的 Agent 团队（如：一个负责执行 SQL MCP 工具，一个负责分析结果）。
+
+#### 7.7.2 A2A + MCP 融合演进图 (Evolution: Tools to Organization)
+
+```mermaid
+flowchart TD
+    %% 样式定义
+    classDef step1 fill:#f5f5f5,stroke:#9e9e9e;
+    classDef step2 fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef step3 fill:#e0f2f1,stroke:#00695c,stroke-width:2px;
+
+    subgraph Phase1 ["Phase 1: 孤岛 (Isolated)"]
+        A1["Single Agent"] --- T1["Hardcoded Tools"]
+    end
+
+    subgraph Phase2 ["Phase 2: 联邦 (Federated / MCP)"]
+        A2["Single Agent"] --- MCP["MCP Standard Interface"]
+        MCP --- S1["Jira Server"]
+        MCP --- S2["SQL Server"]
+        MCP --- S3["Wiki Server"]
+    end
+
+    subgraph Phase3 ["Phase 3: 组织 (Agentic Org / A2A)"]
+        Manager["主编排 (Orchestrator)"]
+        Manager --> Researcher["研究员 Agent"]
+        Manager --> Auditor["审计员 Agent"]
+        
+        Researcher --- MCP_Bus["MCP Tool Bus"]
+        Auditor --- MCP_Bus
+        
+        MCP_Bus --- Tools["Enterprise Tools (Git, DB, etc.)"]
+    end
+
+    class A1,T1 step1
+    class A2,MCP,S1,S2,S3 step2
+    class Manager,Researcher,Auditor,MCP_Bus,Tools step3
+```
+
+**架构箴言**：**用 MCP 构建你的工具库（基础设施），用 A2A 编排你的专家团队（业务逻辑）。**
+
+---
 
 #### 7.5.4 实战演练：供应商风险评估场景 (Scenario Walkthrough)
 
