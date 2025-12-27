@@ -79,6 +79,10 @@
       - [7.7.1 MCP 协议连接架构图 (MCP Architecture)](#771-mcp-协议连接架构图-mcp-architecture)
       - [2. 演进路线：从“孤岛”到“联邦”](#2-演进路线从孤岛到联邦)
       - [7.7.2 A2A + MCP 融合演进图 (Evolution: Tools to Organization)](#772-a2a--mcp-融合演进图-evolution-tools-to-organization)
+    - [7.8 行业案例研究：OpenCode 的 A2A 与 MCP 实践 (Case Study)](#78-行业案例研究opencode-的-a2a-与-mcp-实践-case-study)
+      - [7.8.1 A2A 模式：角色化 Agent 团队](#781-a2a-模式角色化-agent-团队)
+      - [7.8.2 MCP 模式：标准化工具总线](#782-mcp-模式标准化工具总线)
+      - [7.8.3 核心洞察 (Architectural Insights)](#783-核心洞察-architectural-insights)
       - [7.5.4 实战演练：供应商风险评估场景 (Scenario Walkthrough)](#754-实战演练供应商风险评估场景-scenario-walkthrough)
       - [7.5.5 安全与熔断机制 (Safety \& Circuit Breaking)](#755-安全与熔断机制-safety--circuit-breaking)
   - [八、 技术栈选型与推荐 (Tech Stack Selection \& Recommendations)](#八-技术栈选型与推荐-tech-stack-selection--recommendations)
@@ -1693,6 +1697,27 @@ flowchart TD
     class A2,MCP,S1,S2,S3 step2
     class Manager,Researcher,Auditor,MCP_Bus,Tools step3
 ```
+
+### 7.8 行业案例研究：OpenCode 的 A2A 与 MCP 实践 (Case Study)
+
+OpenCode (原名 OpenCode) 是业界首个将 A2A 与 MCP 深度融合并工程化落地的典型案例。
+
+#### 7.8.1 A2A 模式：角色化 Agent 团队
+在 OpenCode 内部，Agent 并非铁板一块，而是通过明确的角色定义实现协作：
+- **主从架构 (Primary & Subagent)**：
+    - **Primary Agents** (如 `build`, `plan`)：充当**编排器 (Orchestrator)**，负责理解用户意图、拆解任务并管理全局上下文。
+    - **Subagents** (如 `explore`, `general`)：充当**专项 Worker**。`explore` 专注于代码库的深度语义检索，`general` 则被设计为可并行调用的通用执行单元。
+- **价值体现**：这种设计将“规划逻辑”与“执行逻辑”解耦，解决了单一模型在大规模代码库面前容易产生的“逻辑过载”问题。
+
+#### 7.8.2 MCP 模式：标准化工具总线
+OpenCode 将 MCP 视为解决“连接广度”的核心标准，实现了工具的即插即用：
+- **协议解耦**：通过 `/mcp` 接口，OpenCode 可以动态挂载任何符合 MCP 标准的第三方 Server。这意味着 Agent 无需感知后端是 GitHub 还是私有 SQL 数据库，只需通过标准协议交互。
+- **工程红利**：开发者只需编写一次 MCP Server，即可在所有支持该协议的 Client (如 Claude Desktop, OpenCode) 中共享能力，极大降低了工具集成的维护成本。
+
+#### 7.8.3 核心洞察 (Architectural Insights)
+> **“A2A 决定了 Agent 之间如何分工协作（逻辑深度），而 MCP 决定了 Agent 如何与外部世界标准化连接（工具广度）。”**
+
+通过 A2A 构建“专家团队”，通过 MCP 构建“超级外挂”，OpenCode 成功演示了如何在高复杂度、高专业性的软件工程领域实现 AI Agent 的规模化落地。
 
 **架构箴言**：**用 MCP 构建你的工具库（基础设施），用 A2A 编排你的专家团队（业务逻辑）。**
 
