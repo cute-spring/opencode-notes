@@ -1,5 +1,82 @@
 # 企业级 Agentic RAG 系统架构设计指南 (Enterprise Agentic RAG)
 
+## 目录
+
+- [企业级 Agentic RAG 系统架构设计指南 (Enterprise Agentic RAG)](#企业级-agentic-rag-系统架构设计指南-enterprise-agentic-rag)
+  - [目录](#目录)
+  - [一、 核心范式与战略价值](#一-核心范式与战略价值)
+    - [1. 模式识别：治理驱动的智能体编排 (Governance-Driven Orchestration)](#1-模式识别治理驱动的智能体编排-governance-driven-orchestration)
+    - [2. 价值解构](#2-价值解构)
+  - [二、 系统架构总览 (System Architecture Overview)](#二-系统架构总览-system-architecture-overview)
+    - [2.1 核心架构组件图](#21-核心架构组件图)
+  - [三、 主体设计实现细节 (Implementation Details)](#三-主体设计实现细节-implementation-details)
+    - [3.1 权限锚定与 Token 穿透实现](#31-权限锚定与-token-穿透实现)
+      - [1. OAuth Token 的安全路由](#1-oauth-token-的安全路由)
+        - [3.1.1 凭证托管流程图 (Credential Vaulting Sequence)](#311-凭证托管流程图-credential-vaulting-sequence)
+      - [2. 向量库的强制元数据过滤](#2-向量库的强制元数据过滤)
+    - [3.2 检索时序与闭环逻辑](#32-检索时序与闭环逻辑)
+    - [3.3 差异化授权下的“工具发现门控” (Dynamic Tool Gating)](#33-差异化授权下的工具发现门控-dynamic-tool-gating)
+      - [1. 核心机制：权限驱动的工具暴露 (Auth-Driven Tool Exposure)](#1-核心机制权限驱动的工具暴露-auth-driven-tool-exposure)
+      - [2. “降级检索”逻辑 (Graceful Degradation)](#2-降级检索逻辑-graceful-degradation)
+    - [3.4 查询型 Agentic RAG 的主子任务编排：Fan-out / Fan-in](#34-查询型-agentic-rag-的主子任务编排fan-out--fan-in)
+    - [3.5 工具注册与接口规范化：把 REST/MCP/Agent 统一成 Tool Card](#35-工具注册与接口规范化把-restmcpagent-统一成-tool-card)
+    - [3.6 可移植消息协议：Task / Progress / Result](#36-可移植消息协议task--progress--result)
+      - [3.6.1 任务生命周期状态机 (Task Lifecycle State Machine)](#361-任务生命周期状态机-task-lifecycle-state-machine)
+    - [3.7 交互模式增强：歧义消解与澄清回路 (Ambiguity Handler Pattern)](#37-交互模式增强歧义消解与澄清回路-ambiguity-handler-pattern)
+      - [3.7.1 交互流程图：歧义消解闭环 (Clarification Loop Diagram)](#371-交互流程图歧义消解闭环-clarification-loop-diagram)
+  - [四、 企业级增强：可观测性、成本与性能 (Enterprise Enhancements)](#四-企业级增强可观测性成本与性能-enterprise-enhancements)
+    - [4.1 全链路审计与溯源 (Traceability \& Audit)](#41-全链路审计与溯源-traceability--audit)
+    - [4.2 成本控制与配额管理 (Cost \& Quota Management)](#42-成本控制与配额管理-cost--quota-management)
+    - [4.3 智能缓存策略：平衡一致性与权限安全 (Smart Caching Strategy)](#43-智能缓存策略平衡一致性与权限安全-smart-caching-strategy)
+      - [4.3.1 核心风险：缓存中毒与越权 (The RBAC Trap)](#431-核心风险缓存中毒与越权-the-rbac-trap)
+      - [4.3.2 解决方案：分层与分区缓存架构 (Layered \& Partitioned Caching)](#432-解决方案分层与分区缓存架构-layered--partitioned-caching)
+      - [4.3.3 “黄金问答集” (Golden Q\&A Set)](#433-黄金问答集-golden-qa-set)
+      - [4.3.4 缓存生命周期管理：主动失效与预测性预热 (Active Invalidation \& Predictive Warming)](#434-缓存生命周期管理主动失效与预测性预热-active-invalidation--predictive-warming)
+      - [4.3.5 缓存全生命周期治理图 (Cache Lifecycle Governance Diagram)](#435-缓存全生命周期治理图-cache-lifecycle-governance-diagram)
+    - [4.4 分层记忆架构：从 Session 到 Profile (Hierarchical Memory)](#44-分层记忆架构从-session-到-profile-hierarchical-memory)
+      - [4.4.1 分层记忆架构图 (Hierarchical Memory Diagram)](#441-分层记忆架构图-hierarchical-memory-diagram)
+  - [五、 多源异构场景下的 RBAC 穿透架构](#五-多源异构场景下的-rbac-穿透架构)
+    - [5.1 核心挑战：权限孤岛与 Token 污染](#51-核心挑战权限孤岛与-token-污染)
+    - [5.2 深度解决方案：三层权限隔离模型](#52-深度解决方案三层权限隔离模型)
+    - [5.3 多用户组的工具门控：工具可见性门控 (Tool Visibility / Exposure Gating) + 策略执行门控 (Policy Enforcement)](#53-多用户组的工具门控工具可见性门控-tool-visibility--exposure-gating--策略执行门控-policy-enforcement)
+      - [5.3.1 工具门控矩阵示例：小工具集（每组 4～5 个）](#531-工具门控矩阵示例小工具集每组-45-个)
+      - [5.3.2 小工具集下的工具选择与触发策略（Routing \& Activation）](#532-小工具集下的工具选择与触发策略routing--activation)
+      - [5.3.3 Diagram：小工具集下的门控、选择与分层触发流程](#533-diagram小工具集下的门控选择与分层触发流程)
+      - [5.3.4 Diagram：以用户组 C 为例的分层触发调用时序](#534-diagram以用户组-c-为例的分层触发调用时序)
+    - [5.4 多向量库实体的联邦检索：索引/分片路由 (Index/Shards Routing) + 联邦向量检索 (Federated Vector Retrieval)](#54-多向量库实体的联邦检索索引分片路由-indexshards-routing--联邦向量检索-federated-vector-retrieval)
+      - [5.4.1 联邦检索架构图 (Federated Retrieval Architecture)](#541-联邦检索架构图-federated-retrieval-architecture)
+    - [5.5 UML：多用户组门控与多向量库联邦检索](#55-uml多用户组门控与多向量库联邦检索)
+      - [5.5.1 组件关系（UML Class Diagram / Logical Components）](#551-组件关系uml-class-diagram--logical-components)
+      - [5.5.2 调用时序（UML Sequence Diagram）](#552-调用时序uml-sequence-diagram)
+  - [六、 质量保证与评价体系 (Quality \& Evaluation)](#六-质量保证与评价体系-quality--evaluation)
+    - [6.1 企业级“双重验证”评估框架](#61-企业级双重验证评估框架)
+    - [6.2 反幻觉闭环：引用门禁 (Citation Gating) + 断言-证据对齐 (Claim–Evidence Alignment)](#62-反幻觉闭环引用门禁-citation-gating--断言-证据对齐-claimevidence-alignment)
+    - [6.3 诚实性协议 (Honesty Protocol)](#63-诚实性协议-honesty-protocol)
+    - [6.4 进化机制：在线反馈闭环 (Online Feedback Loop)](#64-进化机制在线反馈闭环-online-feedback-loop)
+      - [6.4.1 在线反馈闭环图 (Feedback Loop Diagram)](#641-在线反馈闭环图-feedback-loop-diagram)
+  - [七、 工程实践建议与设计模式](#七-工程实践建议与设计模式)
+    - [7.1 模式提取：影子检索 (Shadow Retrieval)](#71-模式提取影子检索-shadow-retrieval)
+    - [7.2 模式提取：确定性回退 (Deterministic Fallback)](#72-模式提取确定性回退-deterministic-fallback)
+    - [7.3 能级分配 (Compute Tiering)](#73-能级分配-compute-tiering)
+    - [7.4 全链路交互与路由架构图 (End-to-End Interaction \& Routing Architecture)](#74-全链路交互与路由架构图-end-to-end-interaction--routing-architecture)
+      - [7.4.1 流程可视化：动态路由与能级跃迁 (Dynamic Routing \& Escalation Flow)](#741-流程可视化动态路由与能级跃迁-dynamic-routing--escalation-flow)
+      - [7.4.2 路由实例解析 (Routing Examples)](#742-路由实例解析-routing-examples)
+      - [7.4.3 查询分类器详解 (Query Classifier Details)](#743-查询分类器详解-query-classifier-details)
+  - [八、 技术栈选型与推荐 (Tech Stack Selection \& Recommendations)](#八-技术栈选型与推荐-tech-stack-selection--recommendations)
+    - [8.1 核心编程语言与框架选型](#81-核心编程语言与框架选型)
+    - [8.2 关键基础设施组件](#82-关键基础设施组件)
+    - [8.3 算力分层与模型配比 (Compute Tiering)](#83-算力分层与模型配比-compute-tiering)
+  - [九、 横向对比与应用拓展](#九-横向对比与应用拓展)
+    - [1. 同类对比](#1-同类对比)
+    - [2. 场景外推](#2-场景外推)
+  - [十、 总结与展望](#十-总结与展望)
+    - [1. “教授箴言”](#1-教授箴言)
+  - [十一、 落地清单：从 Naive RAG 演进到企业级 Agentic RAG](#十一-落地清单从-naive-rag-演进到企业级-agentic-rag)
+    - [11.1 必做（低成本高收益）](#111-必做低成本高收益)
+    - [11.2 进阶（稳定性与可观测性）](#112-进阶稳定性与可观测性)
+    - [11.3 反幻觉闭环（强烈建议）](#113-反幻觉闭环强烈建议)
+
+
 构建一个“企业级”的 Agentic RAG 系统，其核心挑战在于如何将 AI 的不确定性封装在严谨的工程治理体系内。以下是基于 OpenCode 架构演进的深度建议。
 
 ---
@@ -70,6 +147,36 @@ graph TD
 - **实现机制**：主 Agent 不直接持有用户的 OAuth Token，而是持有指向 `Credential Vault` 的引用。
 - **执行流**：当检索 Agent 调用 `JiraTool` 时，请求经过 `Auth Gateway`，网关根据当前 `SessionID` 从 Vault 中提取对应的 `UserToken` 并注入到 HTTP Header 中。
 - **优势**：Agent 始终无法获取明文 Token，防止了提示词泄露（Prompt Leakage）导致的凭证被盗。
+
+##### 3.1.1 凭证托管流程图 (Credential Vaulting Sequence)
+
+```mermaid
+sequenceDiagram
+    participant Agent as 检索 Agent
+    participant Gateway as Auth Gateway (PEP)
+    participant Vault as Credential Vault
+    participant Tool as Target Tool (Jira)
+
+    Note over Agent, Gateway: Agent 仅持有 Vault 引用，不持有 Token
+
+    Agent->>Gateway: 1. 发起调用 (Tool Request)<br/>Header: X-Vault-Ref: "vault:jira:user_123"
+    
+    activate Gateway
+    Gateway->>Vault: 2. 请求凭证 (Resolve Ref)
+    activate Vault
+    Vault-->>Gateway: 3. 返回 OAuth Access Token (Plain)
+    deactivate Vault
+    
+    Gateway->>Gateway: 4. 注入 Authorization Header<br/>(Bearer eyJhbGci...)
+    
+    Gateway->>Tool: 5. 转发请求 (With Token)
+    activate Tool
+    Tool-->>Gateway: 6. 返回数据
+    deactivate Tool
+    
+    Gateway-->>Agent: 7. 返回结果
+    deactivate Gateway
+```
 
 #### 2. 向量库的强制元数据过滤
 - **实现机制**：在 Pinecone/Milvus 中，每个 Chunk 必须包含 `acl` 字段（如 `["dept_engineering", "project_x"]`）。
@@ -228,6 +335,35 @@ TaskResult（子 → 主）建议结构：
 
 与 OpenCode 主子 Agent 委派实现的对齐，可参考 [agents.md](agents.md)。
 
+#### 3.6.1 任务生命周期状态机 (Task Lifecycle State Machine)
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending: TaskRequest Created
+    
+    state "Running (Executing)" as Running {
+        Processing --> Polling: Async Job
+        Polling --> Processing: Check Status
+    }
+
+    Pending --> Running: Agent Picked Up
+    
+    Running --> Completed: Success (TaskResult)
+    Running --> Failed: Error/Timeout
+    
+    state "Completed" as Completed {
+        StoreResult: Save to History
+    }
+
+    Completed --> [*]
+    Failed --> [*]
+
+    note right of Running
+      Emits "TaskProgress" events
+      during execution
+    end note
+```
+
 ### 3.7 交互模式增强：歧义消解与澄清回路 (Ambiguity Handler Pattern)
 
 在企业场景中，用户指令往往隐含上下文或存在歧义。为了避免 Agent 在错误方向上浪费 Token，必须引入显式的 **“澄清回路 (Clarification Loop)”**。
@@ -286,33 +422,6 @@ flowchart TD
 
 ---
 
-## 十一、 落地清单：从 Naive RAG 演进到企业级 Agentic RAG
-
-这一节给出可直接执行的工程落地检查清单，便于把系统从“能答”升级到“可控、可审计、可扩展”。
-
-### 11.1 必做（低成本高收益）
-
-- 工具卡片化：把内部/外部 REST 与 MCP 工具统一为 Tool Card + 输入输出 schema。
-- 引用标准化：统一 citation 结构（doc_id/url/range/updated_at/record_id）。
-- 并行 Fan-out：主 Agent 按意图选 Top-K 工具并行查询。
-- 证据归并：对多源结果去重、聚类、冲突标注，产出结构化 evidence。
-- 引用门禁：无引用覆盖的关键断言一律降级输出。
-
-### 11.2 进阶（稳定性与可观测性）
-
-- 全链路 trace：所有 TaskRequest/Result 贯穿 `trace_id/task_id/parent_task_id`。
-- 超时与部分成功：每个工具 `timeout_ms`，聚合器支持 partial answer。
-- 成本与配额：按用户组/部门做速率限制与预算，必要时降级为“只查 KB”。
-- 质量评估：离线数据集回放（回放同一 trace，比较版本差异）。
-
-### 11.3 反幻觉闭环（强烈建议）
-
-- QA 输出结构化：unsupported_claims/conflicts/missing_queries/rewrite_instructions。
-- 有界补证：最多 1 轮补证（避免无限循环与成本失控）。
-- 冲突处理策略：按权威等级与更新时间排序，必要时在答案中显式声明冲突。
-
----
-
 ## 四、 企业级增强：可观测性、成本与性能 (Enterprise Enhancements)
 
 ### 4.1 全链路审计与溯源 (Traceability & Audit)
@@ -332,12 +441,12 @@ Agentic RAG 由于存在循环迭代，Token 消耗具有不可预测性。
 
 “增加全部热点问题缓存”在企业级场景下是一个**高风险高收益**的决策。虽然它能显著降低成本并提升一致性，但必须引入**“权限感知 (Permission-Awareness)”**以防止越权访问。
 
-#### 1. 核心风险：缓存中毒与越权 (The RBAC Trap)
+#### 4.3.1 核心风险：缓存中毒与越权 (The RBAC Trap)
 *   **场景**：员工 A（高管）问“Q3 奖金池是多少？”，系统生成回答并缓存。
 *   **风险**：员工 B（普通员工）随后问同样问题，若命中全局缓存，将直接看到高管视角的敏感数据。
 *   **原则**：**绝对禁止在不校验权限的情况下共享生成结果。**
 
-#### 2. 解决方案：分层与分区缓存架构 (Layered & Partitioned Caching)
+#### 4.3.2 解决方案：分层与分区缓存架构 (Layered & Partitioned Caching)
 
 建议采用 **“业务域分区 + 权限指纹分层”** 的二维策略，既能防止跨部门数据泄露，又能最大化缓存命中率：
 
@@ -357,14 +466,14 @@ Agentic RAG 由于存在循环迭代，Token 消耗具有不可预测性。
 
 *   **User_ACL_Fingerprint 实现**：将用户所属的所有 UserGroups 和 Roles 排序后进行 Hash 签名。只有具备完全相同权限集合的用户才能共享同一个缓存项。
 
-#### 3. “黄金问答集” (Golden Q&A Set)
+#### 4.3.3 “黄金问答集” (Golden Q&A Set)
 针对 Top 100 高频热点问题（如“如何申请 VPN”），建议引入**人工干预机制**：
 *   **离线生成**：由运营人员或专家编写标准答案。
 *   **人工审核**：确保无敏感信息泄露。
 *   **强制命中**：在 Query Classifier 阶段直接拦截，跳过所有 RAG 流程，直接返回标准答案。
 *   **收益**：0 成本、0 延迟、100% 一致性、100% 安全。
 
-#### 4. 缓存生命周期管理：主动失效与预测性预热 (Active Invalidation & Predictive Warming)
+#### 4.3.4 缓存生命周期管理：主动失效与预测性预热 (Active Invalidation & Predictive Warming)
 
 为了解决“数据更新不及时”和“冷启动延迟”问题，建议建立**事件驱动的缓存治理闭环**，而非仅依赖 TTL 被动过期。
 
@@ -396,7 +505,7 @@ Agentic RAG 由于存在循环迭代，Token 消耗具有不可预测性。
     4.  **智能判定**：若发现某旧查询 Q 与 A3 的相似度 > 0.85，意味着 A3 极可能是 Q 的新答案来源，立即失效该 Cache。
     5.  **主动更新**：(可选) 立即触发后台 Agent 重新生成 Q 的答案并预热缓存。
 
-#### 4.3.1 缓存全生命周期治理图 (Cache Lifecycle Governance Diagram)
+#### 4.3.5 缓存全生命周期治理图 (Cache Lifecycle Governance Diagram)
 
 ```mermaid
 flowchart TD
@@ -407,7 +516,7 @@ flowchart TD
     classDef store fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,stroke-dasharray: 5 5;
 
     subgraph Read_Path ["(1) 读取与写入 (Read & Write)"]
-        Q["用户提问 (Query)"] --> K["计算 Cache Key<br/>(Query + ACL Fingerprint)"]
+        Q["用户提问 (Query)"] --> K["计算 Cache Key<br/>(Query + ACL + Fingerprint)"]
         K --> L{"检查缓存 (L1/L2/L3)"}
         L -- "Hit (命中)" --> R["返回缓存结果<br/>(毫秒级响应)"]
         L -- "Miss (未命中)" --> RAG["执行 RAG 流程<br/>(Retrieval + Generation)"]
@@ -428,16 +537,20 @@ flowchart TD
         V2 -- "相似度 > 阈值" --> D
     end
     
+    %% 场景 C: 预测性预热
+    subgraph Warming_Path ["(3) 预测性预热 (Predictive Warming)"]
+        D -.->|High Freq Keys| P["触发预热 Agent"]
+        P --> RAG
+    end
+    
     %% 连接失效动作与缓存存储
     D -.-> L
 
     class Q,K,L,R,RAG read
     class W write
     class E1,I1,D,E2,V1,V2 invalid
+    class P write
 ```
-
-
-
 
 ### 4.4 分层记忆架构：从 Session 到 Profile (Hierarchical Memory)
 
@@ -621,6 +734,41 @@ sequenceDiagram
 - `user_groups` / `tenant` / `biz_line`
 - `query_intent`
 - `freshness_requirement`
+
+#### 5.4.1 联邦检索架构图 (Federated Retrieval Architecture)
+
+```mermaid
+flowchart TD
+    %% 样式定义
+    classDef router fill:#e3f2fd,stroke:#1565c0,stroke-width:2px;
+    classDef shard fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+    classDef aggregator fill:#fff3e0,stroke:#ef6c00,stroke-width:2px;
+
+    Query["User Query + Context"] --> Router["Index Router (索引路由)"]
+    
+    subgraph Routing_Plane ["路由决策 (Routing Decision)"]
+        Router -->|Parse Intent| Rules["路由规则<br/>(Tenant/Dept/Security)"]
+        Rules --> Plan["生成执行计划<br/>Target Shards + Filters"]
+    end
+
+    subgraph Shards_Layer ["联邦数据分片 (Federated Shards)"]
+        Plan -->|Scatter| S1["Shard A: 工程文档<br/>(Dept=Eng)"]
+        Plan -->|Scatter| S2["Shard B: 销售记录<br/>(Dept=Sales)"]
+        Plan -->|Scatter| S3["Shard C: 公共 Wiki<br/>(Public)"]
+    end
+
+    subgraph Aggregation_Layer ["归并层 (Aggregation)"]
+        S1 -->|Result| Agg["Federated Retriever<br/>(Gather & Rerank)"]
+        S2 -->|Result| Agg
+        S3 -->|Result| Agg
+        
+        Agg -->|Top-K| Final["统一结果集<br/>(Unified Evidence)"]
+    end
+
+    class Router,Rules,Plan router
+    class S1,S2,S3 shard
+    class Agg,Final aggregator
+```
 - `latency_budget_ms` / `cost_budget`
 
 路由器建议输出：
@@ -847,19 +995,19 @@ flowchart LR
 
 ## 七、 工程实践建议与设计模式
 
-### 1. 模式提取：影子检索 (Shadow Retrieval)
+### 7.1 模式提取：影子检索 (Shadow Retrieval)
 - **定义**：在返回答案前，后台并行触发多个检索策略（如关键词、向量、知识图谱 / Knowledge Graph, KG），并由 Agent 进行交叉比对。
 
-### 2. 模式提取：确定性回退 (Deterministic Fallback)
+### 7.2 模式提取：确定性回退 (Deterministic Fallback)
 - **定义**：当 Agent 尝试 N 轮仍无法获得事实时，系统强制终止推理，直接返回预设的“诚实回退”话术，拒绝强行生成。
 - **哲学**：**宁可承认无知，不可产生幻觉**。企业的信任建立在“不乱说”的基础上。
 
-### 3. 能级分配 (Compute Tiering)
+### 7.3 能级分配 (Compute Tiering)
 - **Tier 3 (意图分流 / Query Routing)**：使用高速低成本模型做分类、Query 改写与缓存命中判定（如 Claude Haiku 4.5 / Gemini 3 Flash / OpenAI o4-mini）。
 - **Tier 2 (检索与清洗 / Retrieval & Normalization)**：使用中等能级模型做多步检索计划、结构化抽取、去噪摘要与格式归一（如 Claude Sonnet 4.5 / Gemini 3 Flash（Thinking）/ OpenAI o4-mini）。
 - **Tier 1 (决策与合成 / Synthesis & Verification)**：仅在最终阶段使用最高能级模型做事实综合、冲突仲裁与引用门禁下的严格核对（如 OpenAI o3（或 o3-pro）/ Claude Opus 4.5 / Gemini 3 Pro（或 Deep Think））。
 
-#### 3.0 全链路交互与路由架构图 (End-to-End Interaction & Routing Architecture)
+### 7.4 全链路交互与路由架构图 (End-to-End Interaction & Routing Architecture)
 
 该流程图将**前端交互（歧义消解）**与**后端路由（能级跃迁）**进行了完整融合，展示了从用户输入到最终响应的端到端数据流。
 
@@ -940,7 +1088,7 @@ flowchart TD
     class L2,L3 main
 ```
 
-#### 3.1 流程可视化：动态路由与能级跃迁 (Dynamic Routing & Escalation Flow)
+#### 7.4.1 流程可视化：动态路由与能级跃迁 (Dynamic Routing & Escalation Flow)
 
 该流程展示了如何通过“质量检测器”实现从低成本模型到高智能模型的自动跃迁（Escalation），同时确保所有输出经过安全合规过滤。
 
@@ -1022,7 +1170,7 @@ flowchart TD
     D2 --> F
 ```
 
-#### 3.2 路由实例解析 (Routing Examples)
+#### 7.4.2 路由实例解析 (Routing Examples)
 
 为了更直观地理解路由器的决策逻辑，以下对比了“简单明确”与“复杂模糊”两种典型场景的处理流程：
 
@@ -1074,7 +1222,7 @@ graph TD
     end
 ```
 
-#### 3.3 查询分类器详解 (Query Classifier Details)
+#### 7.4.3 查询分类器详解 (Query Classifier Details)
 
 查询分类器 (Query Classifier) 是智能路由系统的“前哨”，负责在毫秒级内解析用户意图，为后续的计算资源分配提供决策依据。它不仅仅是一个简单的标签生成器，更是一个包含预处理和规则修正的复合组件。
 
@@ -1169,8 +1317,6 @@ classDiagram
     QueryClassification *-- RoutingSuggestion
 ```
 
-### 4. 引用门禁与事实核查 (Citation Gating)
-
 ---
 
 ## 八、 技术栈选型与推荐 (Tech Stack Selection & Recommendations)
@@ -1236,6 +1382,33 @@ classDiagram
 - > “企业级架构的灵魂在于‘约束’。给 AI 越多的约束，它产生的价值就越稳定。”
 - > > “不要试图教 AI 守规矩，要用代码把规矩写进它必须经过的管道里。”
 - > > “好的检索不是找到更多数据，而是排除更多噪声。架构设计的本质是构建过滤器的层级。”
+
+---
+
+## 十一、 落地清单：从 Naive RAG 演进到企业级 Agentic RAG
+
+这一节给出可直接执行的工程落地检查清单，便于把系统从“能答”升级到“可控、可审计、可扩展”。
+
+### 11.1 必做（低成本高收益）
+
+- 工具卡片化：把内部/外部 REST 与 MCP 工具统一为 Tool Card + 输入输出 schema。
+- 引用标准化：统一 citation 结构（doc_id/url/range/updated_at/record_id）。
+- 并行 Fan-out：主 Agent 按意图选 Top-K 工具并行查询。
+- 证据归并：对多源结果去重、聚类、冲突标注，产出结构化 evidence。
+- 引用门禁：无引用覆盖的关键断言一律降级输出。
+
+### 11.2 进阶（稳定性与可观测性）
+
+- 全链路 trace：所有 TaskRequest/Result 贯穿 `trace_id/task_id/parent_task_id`。
+- 超时与部分成功：每个工具 `timeout_ms`，聚合器支持 partial answer。
+- 成本与配额：按用户组/部门做速率限制与预算，必要时降级为“只查 KB”。
+- 质量评估：离线数据集回放（回放同一 trace，比较版本差异）。
+
+### 11.3 反幻觉闭环（强烈建议）
+
+- QA 输出结构化：unsupported_claims/conflicts/missing_queries/rewrite_instructions。
+- 有界补证：最多 1 轮补证（避免无限循环与成本失控）。
+- 冲突处理策略：按权威等级与更新时间排序，必要时在答案中显式声明冲突。
 
 ---
 
