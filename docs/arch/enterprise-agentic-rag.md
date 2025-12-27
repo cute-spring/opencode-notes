@@ -8,20 +8,23 @@
     - [1. 模式识别：治理驱动的智能体编排 (Governance-Driven Orchestration)](#1-模式识别治理驱动的智能体编排-governance-driven-orchestration)
     - [2. 价值解构](#2-价值解构)
   - [二、 系统架构总览 (System Architecture Overview)](#二-系统架构总览-system-architecture-overview)
-    - [2.1 核心架构组件图](#21-核心架构组件图)
+    - [2.1 核心架构组件图与模式解析](#21-核心架构组件图与模式解析)
   - [三、 主体设计实现细节 (Implementation Details)](#三-主体设计实现细节-implementation-details)
     - [3.1 权限锚定与 Token 穿透实现](#31-权限锚定与-token-穿透实现)
       - [1. OAuth Token 的安全路由](#1-oauth-token-的安全路由)
         - [3.1.1 凭证托管流程图 (Credential Vaulting Sequence)](#311-凭证托管流程图-credential-vaulting-sequence)
+        - [3.1.3 权衡与考量 (Trade-offs: Credential Vaulting)](#313-权衡与考量-trade-offs-credential-vaulting)
+        - [3.1.2 策略引擎的实现示例 (Strategy Pattern Pseudo-code)](#312-策略引擎的实现示例-strategy-pattern-pseudo-code)
       - [2. 向量库的强制元数据过滤](#2-向量库的强制元数据过滤)
     - [3.2 检索时序与闭环逻辑](#32-检索时序与闭环逻辑)
     - [3.3 差异化授权下的“工具发现门控” (Dynamic Tool Gating)](#33-差异化授权下的工具发现门控-dynamic-tool-gating)
       - [1. 核心机制：权限驱动的工具暴露 (Auth-Driven Tool Exposure)](#1-核心机制权限驱动的工具暴露-auth-driven-tool-exposure)
       - [2. “降级检索”逻辑 (Graceful Degradation)](#2-降级检索逻辑-graceful-degradation)
-    - [3.4 查询型 Agentic RAG 的主子任务编排：Fan-out / Fan-in](#34-查询型-agentic-rag-的主子任务编排fan-out--fan-in)
-    - [3.5 工具注册与接口规范化：把 REST/MCP/Agent 统一成 Tool Card](#35-工具注册与接口规范化把-restmcpagent-统一成-tool-card)
+    - [3.4 查询型 Agentic RAG 的主子任务编排：Fan-out / Fan-in (Scatter-Gather Pattern)](#34-查询型-agentic-rag-的主子任务编排fan-out--fan-in-scatter-gather-pattern)
+    - [3.5 工具注册与接口规范化：把 REST/MCP/Agent 统一成 Tool Card (Adapter \& Command Pattern)](#35-工具注册与接口规范化把-restmcpagent-统一成-tool-card-adapter--command-pattern)
     - [3.6 可移植消息协议：Task / Progress / Result](#36-可移植消息协议task--progress--result)
-      - [3.6.1 任务生命周期状态机 (Task Lifecycle State Machine)](#361-任务生命周期状态机-task-lifecycle-state-machine)
+      - [3.6.1 任务生命周期状态机 (Task Lifecycle State Machine Pattern)](#361-任务生命周期状态机-task-lifecycle-state-machine-pattern)
+        - [状态机实现示例 (State Machine Pseudo-code)](#状态机实现示例-state-machine-pseudo-code)
     - [3.7 交互模式增强：歧义消解与澄清回路 (Ambiguity Handler Pattern)](#37-交互模式增强歧义消解与澄清回路-ambiguity-handler-pattern)
       - [3.7.1 交互流程图：歧义消解闭环 (Clarification Loop Diagram)](#371-交互流程图歧义消解闭环-clarification-loop-diagram)
   - [四、 企业级增强：可观测性、成本与性能 (Enterprise Enhancements)](#四-企业级增强可观测性成本与性能-enterprise-enhancements)
@@ -33,6 +36,7 @@
       - [4.3.3 “黄金问答集” (Golden Q\&A Set)](#433-黄金问答集-golden-qa-set)
       - [4.3.4 缓存生命周期管理：主动失效与预测性预热 (Active Invalidation \& Predictive Warming)](#434-缓存生命周期管理主动失效与预测性预热-active-invalidation--predictive-warming)
       - [4.3.5 缓存全生命周期治理图 (Cache Lifecycle Governance Diagram)](#435-缓存全生命周期治理图-cache-lifecycle-governance-diagram)
+      - [4.3.6 权衡与考量 (Trade-offs: Smart Caching)](#436-权衡与考量-trade-offs-smart-caching)
     - [4.4 分层记忆架构：从 Session 到 Profile (Hierarchical Memory)](#44-分层记忆架构从-session-到-profile-hierarchical-memory)
       - [4.4.1 分层记忆架构图 (Hierarchical Memory Diagram)](#441-分层记忆架构图-hierarchical-memory-diagram)
   - [五、 多源异构场景下的 RBAC 穿透架构](#五-多源异构场景下的-rbac-穿透架构)
@@ -42,6 +46,7 @@
       - [5.3.1 工具门控矩阵示例：小工具集（每组 4～5 个）](#531-工具门控矩阵示例小工具集每组-45-个)
       - [5.3.2 小工具集下的工具选择与触发策略（Routing \& Activation）](#532-小工具集下的工具选择与触发策略routing--activation)
       - [5.3.3 Diagram：小工具集下的门控、选择与分层触发流程](#533-diagram小工具集下的门控选择与分层触发流程)
+      - [5.3.5 权衡与考量 (Trade-offs: Double Gating)](#535-权衡与考量-trade-offs-double-gating)
       - [5.3.4 Diagram：以用户组 C 为例的分层触发调用时序](#534-diagram以用户组-c-为例的分层触发调用时序)
     - [5.4 多向量库实体的联邦检索：索引/分片路由 (Index/Shards Routing) + 联邦向量检索 (Federated Vector Retrieval)](#54-多向量库实体的联邦检索索引分片路由-indexshards-routing--联邦向量检索-federated-vector-retrieval)
       - [5.4.1 联邦检索架构图 (Federated Retrieval Architecture)](#541-联邦检索架构图-federated-retrieval-architecture)
@@ -62,6 +67,12 @@
       - [7.4.1 流程可视化：动态路由与能级跃迁 (Dynamic Routing \& Escalation Flow)](#741-流程可视化动态路由与能级跃迁-dynamic-routing--escalation-flow)
       - [7.4.2 路由实例解析 (Routing Examples)](#742-路由实例解析-routing-examples)
       - [7.4.3 查询分类器详解 (Query Classifier Details)](#743-查询分类器详解-query-classifier-details)
+    - [7.5 架构演进：引入 Agentic RAG 动态循环 (The Agentic Loop)](#75-架构演进引入-agentic-rag-动态循环-the-agentic-loop)
+      - [7.5.1 增强版架构图：路由 + 智能体循环 (Router + Agentic Loop)](#751-增强版架构图路由--智能体循环-router--agentic-loop)
+      - [7.5.2 核心差异点解析](#752-核心差异点解析)
+      - [7.5.3 循环机制深度剖析 (Deep Dive into the Loop)](#753-循环机制深度剖析-deep-dive-into-the-loop)
+      - [7.5.4 实战演练：供应商风险评估场景 (Scenario Walkthrough)](#754-实战演练供应商风险评估场景-scenario-walkthrough)
+      - [7.5.5 安全与熔断机制 (Safety \& Circuit Breaking)](#755-安全与熔断机制-safety--circuit-breaking)
   - [八、 技术栈选型与推荐 (Tech Stack Selection \& Recommendations)](#八-技术栈选型与推荐-tech-stack-selection--recommendations)
     - [8.1 核心编程语言与框架选型](#81-核心编程语言与框架选型)
     - [8.2 关键基础设施组件](#82-关键基础设施组件)
@@ -87,9 +98,12 @@
 在企业场景下，检索不再是简单的语义匹配，而是一个**受控的策略执行过程**。
 - **范式转变**：从“检索增强生成”转向“**策略驱动的事实综合 (Policy-Driven Fact Synthesis)**”。
 - **战略价值**：通过引入“治理层”，解决 AI 在访问敏感数据时的权限越位问题，同时确保输出的确定性（Factuality）。
+- **设计模式关联**：
+    - **Orchestrator (编排器) 模式**：主 Agent 扮演编排器角色，管理子任务的生命周期与执行流。
+    - **Strategy (策略) 模式**：检索逻辑不再硬编码，而是根据用户权限和任务上下文动态选择执行策略。
 
 ### 2. 价值解构
-- **解耦决策与执行**：主 Agent 负责业务逻辑，检索 Agent 负责在受限沙箱内寻找证据。
+- **解耦决策与执行**：主 Agent 负责业务逻辑（决策面），检索 Agent 负责在受限沙箱内寻找证据（执行面）。这种 **Command (命令) 模式** 的变体确保了职责分离。
 - **权限闭环**：检索行为必须携带用户身份上下文（Identity Context），确保 AI 无法通过“幻觉”绕过 RBAC 限制。
 
 ---
@@ -98,7 +112,7 @@
 
 企业级 Agentic RAG 系统必须具备明确的**控制面 (Control Plane)** 和 **数据面 (Data Plane)** 分离。
 
-### 2.1 核心架构组件图
+### 2.1 核心架构组件图与模式解析
 
 ```mermaid
 graph TD
@@ -135,13 +149,24 @@ graph TD
     FinalResponse --> User
 ```
 
+**组件背后的设计模式：**
+
+| 组件 | 对应设计模式 | 作用说明 |
+| :--- | :--- | :--- |
+| **API Gateway** | **Gateway (网关) 模式** | 统一入口，负责鉴权、限流与请求预处理。 |
+| **Main Agent (Planner)** | **Orchestrator (编排器) 模式** | 负责意图解析、任务拆解与全局状态管理。 |
+| **Policy Engine (PDP)** | **Strategy (策略) 模式** | 封装多种权限判定逻辑（RBAC/ABAC），支持动态策略切换。 |
+| **Auth Gateway (PEP)** | **Proxy (代理) / Interceptor (拦截器) 模式** | 在工具调用链中强制注入身份令牌或过滤器，实现权限闭环。 |
+| **Tool Registry** | **Registry (注册表) 模式** | 集中管理工具元数据，解耦工具定义与调用逻辑。 |
+| **Critic (Verifier)** | **Chain of Responsibility (责任链) 模式** | 作为验证环节，决定任务是否可以进入下一阶段或需要重试。 |
+
 ---
 
 ## 三、 主体设计实现细节 (Implementation Details)
 
 ### 3.1 权限锚定与 Token 穿透实现
 
-为了确保 Agent 只能访问用户权限内的数据，我们采用 **“凭证托管 (Credential Vaulting)”** 与 **“动态过滤器注入 (Dynamic Filter Injection)”** 相结合的方案。
+为了确保 Agent 只能访问用户权限内的数据，我们采用 **“凭证托管 (Credential Vaulting)”** 与 **“动态过滤器注入 (Dynamic Filter Injection)”** 相结合的方案。这本质上是 **Proxy (代理) 模式** 的应用，网关作为工具调用的代理，控制权限的透明注入。
 
 #### 1. OAuth Token 的安全路由
 - **实现机制**：主 Agent 不直接持有用户的 OAuth Token，而是持有指向 `Credential Vault` 的引用。
@@ -176,6 +201,47 @@ sequenceDiagram
     
     Gateway-->>Agent: 7. 返回结果
     deactivate Gateway
+```
+
+##### 3.1.3 权衡与考量 (Trade-offs: Credential Vaulting)
+
+| 维度 | 优势 (Pros) | 代价 (Cons / Risks) |
+| :--- | :--- | :--- |
+| **安全性** | Agent 无法接触明文 Token，极大降低了泄露风险。 | 增加了 `Credential Vault` 这一核心服务的运维复杂性。 |
+| **合规性** | 审计日志可精确记录谁在何时使用了哪个凭证。 | 每次调用均需解密/换取 Token，可能引入 50-200ms 的额外延迟。 |
+| **可用性** | 凭证集中管理，易于轮换与失效。 | `Vault` 成为系统单点，若其不可用，所有工具调用将瘫痪。 |
+
+##### 3.1.2 策略引擎的实现示例 (Strategy Pattern Pseudo-code)
+
+通过 **Strategy (策略) 模式**，我们可以灵活切换不同的权限判定逻辑：
+
+```python
+class AuthStrategy:
+    """权限判定策略接口"""
+    def resolve_filters(self, user_context: dict) -> dict:
+        pass
+
+class RBACStrategy(AuthStrategy):
+    """基于角色的访问控制策略"""
+    def resolve_filters(self, user_context: dict) -> dict:
+        # 根据用户所属的角色（如 'engineering'）返回过滤器
+        return {"dept": {"$in": user_context.get("roles", [])}}
+
+class ABACStrategy(AuthStrategy):
+    """基于属性的访问控制策略"""
+    def resolve_filters(self, user_context: dict) -> dict:
+        # 根据用户属性（如 'project_id'）返回更精细的过滤器
+        return {"project_id": user_context.get("active_project")}
+
+# 策略执行点 (PEP)
+class PolicyEngine:
+    def __init__(self, strategy: AuthStrategy):
+        self.strategy = strategy
+    
+    def get_secure_query(self, query: dict, user_context: dict):
+        filters = self.strategy.resolve_filters(user_context)
+        query["filter"] = {**query.get("filter", {}), **filters}
+        return query
 ```
 
 #### 2. 向量库的强制元数据过滤
@@ -242,9 +308,9 @@ sequenceDiagram
 - **逻辑流**：Agent 会将原本需要通过 API 获取的实时数据需求，转化为对向量库中“授权历史快照”的查询。
 - **透明感知**：用户感知的差异仅在于回答的时效性（实时 API vs. 历史文档），而架构的安全性得到了刚性保障。
 
-### 3.4 查询型 Agentic RAG 的主子任务编排：Fan-out / Fan-in
+### 3.4 查询型 Agentic RAG 的主子任务编排：Fan-out / Fan-in (Scatter-Gather Pattern)
 
-在“纯查询、不改变任何状态”的企业问答场景中，最稳健且性价比最高的演进路线通常不是把一个 Agent 做得越来越聪明，而是把一次问答拆成**有界的并行子请求**，再做确定性的归并与验证。
+在“纯查询、不改变任何状态”的企业问答场景中，最稳健且性价比最高的演进路线通常不是把一个 Agent 做得越来越聪明，而是采用 **Scatter-Gather (分散-聚集) 模式**：把一次问答拆成**有界的并行子请求 (Scatter)**，再做确定性的**归并与验证 (Gather)**。
 
 核心结构可以抽象为：
 
@@ -275,9 +341,11 @@ flowchart LR
 - **并行任务 Top-K**：通常 3～6 个数据源足以覆盖主要事实，超出会显著增加噪声与成本。
 - **超时与部分成功**：任何子任务超时，主 Agent 仍应基于已获得证据输出“部分答案 + 缺失项说明”。
 
-### 3.5 工具注册与接口规范化：把 REST/MCP/Agent 统一成 Tool Card
+### 3.5 工具注册与接口规范化：把 REST/MCP/Agent 统一成 Tool Card (Adapter & Command Pattern)
 
-当数据源扩展到内部/外部 REST API 与 MCP 工具时，主 Agent 最大的风险来自“工具发现与参数填充”不稳定。因此建议引入一个稳定的中间层：**Tool Card（工具卡片）**。
+当数据源扩展到内部/外部 REST API 与 MCP 工具时，主 Agent 最大的风险来自“工具发现与参数填充”不稳定。
+- **Adapter (适配器) 模式**：通过 `Tool Card` 将异构的接口（REST, MCP, GraphQL）适配成统一的结构。
+- **Command (命令) 模式**：每个 `Tool Card` 封装了一个可执行的指令及其元数据。
 
 每个工具卡片描述一个可调用能力，并以结构化 schema 约束输入输出：
 
@@ -335,7 +403,9 @@ TaskResult（子 → 主）建议结构：
 
 与 OpenCode 主子 Agent 委派实现的对齐，可参考 [agents.md](agents.md)。
 
-#### 3.6.1 任务生命周期状态机 (Task Lifecycle State Machine)
+#### 3.6.1 任务生命周期状态机 (Task Lifecycle State Machine Pattern)
+
+采用 **State Machine (状态机) 模式** 来管理复杂的子任务生命周期，确保在分布式环境下状态的一致性。
 
 ```mermaid
 stateDiagram-v2
@@ -364,9 +434,32 @@ stateDiagram-v2
     end note
 ```
 
+##### 状态机实现示例 (State Machine Pseudo-code)
+
+```python
+class TaskStateMachine:
+    def __init__(self, task_id):
+        self.task_id = task_id
+        self.state = "PENDING"
+        self.history = []
+
+    def transition_to(self, next_state):
+        valid_transitions = {
+            "PENDING": ["RUNNING", "FAILED"],
+            "RUNNING": ["COMPLETED", "FAILED"],
+            "COMPLETED": [],
+            "FAILED": []
+        }
+        if next_state in valid_transitions[self.state]:
+            self.state = next_state
+            self.history.append({"state": self.state, "timestamp": now()})
+        else:
+            raise InvalidStateTransition(f"Cannot move from {self.state} to {next_state}")
+```
+
 ### 3.7 交互模式增强：歧义消解与澄清回路 (Ambiguity Handler Pattern)
 
-在企业场景中，用户指令往往隐含上下文或存在歧义。为了避免 Agent 在错误方向上浪费 Token，必须引入显式的 **“澄清回路 (Clarification Loop)”**。
+在企业场景中，用户指令往往隐含上下文或存在歧义。为了避免 Agent 在错误方向上浪费 Token，必须引入显式的 **“澄清回路 (Clarification Loop)”**。这可以视为 **Chain of Responsibility (责任链) 模式** 的应用：请求首先经过歧义分析拦截器，只有通过（明确）或处理完毕（澄清后）才能进入检索链。
 
 - **机制**：
     1.  **歧义检测**：Query Classifier 输出 `ambiguity_score`。
@@ -552,6 +645,12 @@ flowchart TD
     class P write
 ```
 
+#### 4.3.6 权衡与考量 (Trade-offs: Smart Caching)
+
+- **性能收益 vs. 管理开销**：缓存极大降低了响应延迟和 Token 成本，但引入了复杂的 `Fingerprint` 计算和主动失效逻辑。
+- **一致性 vs. 权限隔离**：过度共享缓存会导致越权，过度隔离（按用户隔离）会导致缓存命中率极低。`ACL Fingerprint` 是目前兼顾二者的平衡点。
+- **语义失效的成本**：`Reverse Semantic Search` 虽然强大，但需要额外的向量库存储查询历史，并持续运行扫描任务。建议仅在“高频且对时效性极度敏感”的业务域开启。
+
 ### 4.4 分层记忆架构：从 Session 到 Profile (Hierarchical Memory)
 
 企业级 Agent 的核心壁垒在于“越用越懂你”。建议从单一的会话记忆升级为三层记忆架构：
@@ -677,6 +776,12 @@ flowchart TD
   Q -->|"证据缺口"| M["补证计划：missing queries 与触发建议"]
   M --> A
 ```
+
+#### 5.3.5 权衡与考量 (Trade-offs: Double Gating)
+
+- **防御深度 (Defense in Depth)**：即使攻击者通过 Prompt Injection 绕过了第一层“可见性门控”，第二层“执行强制门控 (PEP)”依然会拦截非法的物理调用。
+- **配置复杂度**：需要维护 `UserGroup -> ToolCard` 的映射关系，以及各工具对应的 RLS/过滤规则。建议通过 `Policy as Code` 进行版本化管理。
+- **冷启动与延迟**：在 Session 启动时加载所有允许的 Tool Cards 可能引入微小延迟，推荐对 PDP 的决策结果进行短时间缓存。
 
 #### 5.3.4 Diagram：以用户组 C 为例的分层触发调用时序
 
@@ -1316,6 +1421,126 @@ classDiagram
     QueryClassification *-- SafetyStatus
     QueryClassification *-- RoutingSuggestion
 ```
+
+### 7.5 架构演进：引入 Agentic RAG 动态循环 (The Agentic Loop)
+
+如果说 **7.4 关注的是“请求该去哪儿”（分流）**，那么本节的变体关注的是**“去了之后怎么通过自主循环解决复杂问题”（执行）**。
+
+这是一个对 7.4 中 `Main Lane` 和 `Escalate Lane` 的**内部显微放大**。在企业级场景中，复杂的 RAG 任务（如“对比三家供应商的财报并给出风险评估”）无法通过单次检索解决，必须引入 **“思考-行动-观察 (Think-Act-Observe)”** 的动态循环。
+
+#### 7.5.1 增强版架构图：路由 + 智能体循环 (Router + Agentic Loop)
+
+此图展示了当路由器决定启用 "Agentic Mode" 时，系统如何进入一个**有状态的运行时环境**。图中特别补充了**工具注册表**、**安全拦截**与**上下文剪枝**等企业级关键细节。
+
+```mermaid
+flowchart TD
+    %% 样式定义
+    classDef router fill:#f9f9f9,stroke:#666,stroke-dasharray: 5 5;
+    classDef fast fill:#e6f3ff,stroke:#3399ff,stroke-width:2px;
+    classDef agent fill:#e0f2f1,stroke:#00695c,stroke-width:2px;
+    classDef action fill:#fff3e0,stroke:#e65100,stroke-width:2px;
+    classDef reflection fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px;
+    classDef infra fill:#eceff1,stroke:#546e7a,stroke-width:1px,stroke-dasharray: 2 2;
+
+    Input["用户请求"] --> Router["智能路由器 (Smart Router)"]
+
+    %% 分支 1: 线性路径
+    Router -->|简单/明确| Fast["⚡️ Fast Lane (Linear RAG)<br/>单次检索 -> 生成"]
+
+    %% 分支 2: Agentic 路径
+    Router -->|复杂/模糊| AgentStart(("🏁 启动 Agent 运行时"))
+
+    subgraph Agentic_Runtime ["🤖 Agentic RAG Loop (ReAct / Plan-and-Solve)"]
+        direction TB
+        
+        AgentStart --> Memory["读取短期/长期记忆"]
+        Memory --> Plan["🧠 规划与思考 (Thought)<br/>'我需要查什么？'"]
+        
+        %% 基础设施注入
+        Registry[("🛠️ 工具注册表\n(Tool Registry)")] -.-> Plan
+        
+        Plan --> Decision{"需要更多信息?"}
+        
+        %% 行动回路
+        Decision -- "Yes: 准备调用" --> Safety{"🛡️ 权限/安全检查\n(Safety Check)"}
+        
+        Safety -- "Block" --> Reflect
+        Safety -- "Pass" --> Act["🛠️ 工具执行 (Action)<br/>(Search / Code / API)"]
+        
+        Act --> Env["🌍 环境反馈 (Observation)<br/>(API Result / Doc Content)"]
+        Env --> Reflect["👀 结果反思 (Reflection)<br/>'结果是否有效？'"]
+        
+        Reflect -- "证据不足/错误" --> Prune["✂️ 上下文剪枝\n(Context Pruning)"]
+        Prune --> Plan
+        
+        %% 终止回路
+        Reflect -- "证据充分" --> Summarize["📝 综合事实"]
+        Decision -- "No: 任务完成" --> Summarize
+    end
+
+    %% 输出汇聚
+    Fast --> Output["🛡️ 安全过滤与响应"]
+    Summarize --> Output
+
+    class Router router
+    class Fast fast
+    class Plan,Summarize,Memory,Prune agent
+    class Act,Env action
+    class Reflect,Safety reflection
+    class Registry infra
+```
+
+#### 7.5.2 核心差异点解析
+
+| 维度 | 7.4 基础路由架构 | 7.5 Agentic RAG 增强架构 |
+| :--- | :--- | :--- |
+| **执行模式** | **线性流水线 (Pipeline)**<br/>检索 -> 生成 | **动态循环 (Loop)**<br/>思考 -> 行动 -> 观察 -> 再思考 |
+| **检索性质** | **预定义检索**<br/>系统预先决定查 Top-K | **自主检索**<br/>Agent 根据当前发现决定下一步查什么 |
+| **纠错能力** | 弱（依靠最终的 Rerank/Filter） | **强（Self-Correction）**<br/>发现查出来的文档无关，自动换关键词重查 |
+| **适用场景** | 事实问答、标准作业 | 复杂归因、跨文档推理、模糊探索 |
+
+#### 7.5.3 循环机制深度剖析 (Deep Dive into the Loop)
+
+Agentic RAG 的强大之处在于其内部状态流转。以下是关键环节的详细设计：
+
+1.  **规划与思考 (Thought/Plan)**：
+    *   **Scratchpad (思维草稿纸)**：Agent 维护一个隐式的 JSON/Markdown 缓冲区，记录已获知的事实和待解决的子问题。
+    *   **动态分解**：遇到大问题（如“分析 A 公司的财务健康度”），Agent 会将其拆解为“查营收”、“查利润”、“查负债”等原子步骤。
+
+2.  **行动 (Act) - 既然是 RAG，怎么 Act？**：
+    *   **参数化检索**：Agent 不再只是做语义搜索，而是生成精确的过滤条件（如 `year=2024`, `category=finance`）。
+    *   **多工具调用**：Agent 可以先调用 `list_files` 摸清目录结构，再调用 `read_file` 精读特定文档。
+
+3.  **反思 (Reflect) - 避免“傻瓜式”执行**：
+    *   **空结果处理**：如果检索返回为空，线性 RAG 会直接回答“不知道”；Agentic RAG 会反思：“是不是关键词太严格了？尝试去掉日期限制重试。”
+    *   **矛盾检测**：发现两份文档数据不一致时，Agent 会生成一个新的 `Verification Task` 去寻找第三个来源。
+
+#### 7.5.4 实战演练：供应商风险评估场景 (Scenario Walkthrough)
+
+**用户提问**：“对比 Alpha Corp 和 Beta Inc 2024 年的供应链稳定性，并给出风险预警。”
+
+**Agentic Loop 执行轨迹**：
+
+*   **Turn 1 (思考)**：用户问了两家公司，我需要分别查它们的年报。先查 Alpha Corp。
+*   **Turn 1 (行动)**：调用 `vector_search(query="Alpha Corp supply chain risks 2024")`。
+*   **Turn 1 (观察)**：返回了 Alpha Corp 的 ESG 报告，提到“芯片短缺导致 Q3 交付延迟”。
+*   **Turn 2 (思考)**：Alpha 的数据有了。现在查 Beta Inc。
+*   **Turn 2 (行动)**：调用 `vector_search(query="Beta Inc supply chain 2024")`。
+*   **Turn 2 (观察)**：返回为空（0 results）。
+*   **Turn 2 (反思)**：检索失败。可能是因为 Beta Inc 是子公司，数据在母公司 Gamma Group 报告里。我需要查 Beta 的母公司。
+*   **Turn 3 (行动)**：调用 `search_company_structure(name="Beta Inc")`。
+*   **Turn 3 (观察)**：确认母公司为 Gamma Group。
+*   **Turn 4 (行动)**：调用 `vector_search(query="Gamma Group supply chain 2024", filter="subsidiary:Beta")`。
+*   **Turn 4 (观察)**：检索到“Beta 工厂罢工事件”。
+*   **Turn 5 (综合)**：对比 Alpha 的芯片短缺和 Beta 的罢工，生成最终报告。
+
+#### 7.5.5 安全与熔断机制 (Safety & Circuit Breaking)
+
+为了防止 Agent 陷入死循环或过度消耗 Token，必须引入**“工程制动器”**：
+
+*   **Max Steps (最大步数)**：强制限制 Loop 最多执行 N 次（例如 8 次）。
+*   **Token Budget (预算控制)**：并在 Prompt 中注入剩余预算提示（"You have $0.05 left."）。
+*   **Loop Detection (死循环检测)**：检测连续两次 Action 和 Parameters 是否完全一致。若一致，强制终止或注入随机扰动。
 
 ---
 
