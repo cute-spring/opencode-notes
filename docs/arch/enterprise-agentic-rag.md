@@ -82,7 +82,16 @@
     - [7.8 行业案例研究：OpenCode 的 A2A 与 MCP 实践 (Case Study)](#78-行业案例研究opencode-的-a2a-与-mcp-实践-case-study)
       - [7.8.1 A2A 模式：角色化 Agent 团队](#781-a2a-模式角色化-agent-团队)
       - [7.8.2 MCP 模式：标准化工具总线](#782-mcp-模式标准化工具总线)
-      - [7.8.3 核心洞察 (Architectural Insights)](#783-核心洞察-architectural-insights)
+      - [7.8.3 深度解析：OpenCode 的“工具总线”设计模式](#783-深度解析opencode-的工具总线设计模式)
+      - [7.8.4 核心洞察 (Architectural Insights)](#784-核心洞察-architectural-insights)
+    - [7.9 协议深度解析：MCP (Model Context Protocol) 标准](#79-协议深度解析mcp-model-context-protocol-标准)
+      - [7.9.1 MCP 的三大核心支柱 (The 3 Pillars)](#791-mcp-的三大核心支柱-the-3-pillars)
+      - [7.9.2 传输协议：stdio vs. SSE](#792-传输协议stdio-vs-sse)
+      - [7.9.3 安全治理：MCP 的安全边界](#793-安全治理mcp-的安全边界)
+      - [7.9.4 MCP 协议规范细节 (Specification Details)](#794-mcp-协议规范细节-specification-details)
+        - [1. 初始化握手 (Initialization)](#1-初始化握手-initialization)
+        - [2. 获取工具列表 (List Tools)](#2-获取工具列表-list-tools)
+        - [3. 调用工具 (Call Tool)](#3-调用工具-call-tool)
       - [7.5.4 实战演练：供应商风险评估场景 (Scenario Walkthrough)](#754-实战演练供应商风险评估场景-scenario-walkthrough)
       - [7.5.5 安全与熔断机制 (Safety \& Circuit Breaking)](#755-安全与熔断机制-safety--circuit-breaking)
   - [八、 技术栈选型与推荐 (Tech Stack Selection \& Recommendations)](#八-技术栈选型与推荐-tech-stack-selection--recommendations)
@@ -1714,10 +1723,221 @@ OpenCode 将 MCP 视为解决“连接广度”的核心标准，实现了工具
 - **协议解耦**：通过 `/mcp` 接口，OpenCode 可以动态挂载任何符合 MCP 标准的第三方 Server。这意味着 Agent 无需感知后端是 GitHub 还是私有 SQL 数据库，只需通过标准协议交互。
 - **工程红利**：开发者只需编写一次 MCP Server，即可在所有支持该协议的 Client (如 Claude Desktop, OpenCode) 中共享能力，极大降低了工具集成的维护成本。
 
-#### 7.8.3 核心洞察 (Architectural Insights)
+#### 7.8.3 深度解析：OpenCode 的“工具总线”设计模式
+通过对 OpenCode 源码的分析，其工具系统展现了 **“万物皆工具 (Everything as a Tool)”** 的核心理念，实现了原生能力与外部 MCP 生态的深度融合：
+
+```mermaid
+flowchart TD
+    %% 样式定义
+    classDef agent fill:#e0f2f1,stroke:#00695c,stroke-width:2px;
+    classDef registry fill:#f5f5f5,stroke:#9e9e9e,stroke-dasharray: 5 5;
+    classDef native fill:#e3f2fd,stroke:#1565c0,stroke-width:2px;
+    classDef mcp fill:#fff3e0,stroke:#e65100,stroke-width:2px;
+    classDef external fill:#f3e5f5,stroke:#7b1fa2,stroke-width:1px;
+
+    Agent["🤖 编排智能体 (Orchestrator)"] -->|"(1) 请求工具调用"| Registry["🛠️ 工具注册表 (Tool Registry)"]
+
+    subgraph Internal_Engine ["OpenCode 内部执行引擎"]
+        Registry --> Path_Native["(2a) 原生路径"]
+        Registry --> Path_MCP["(2b) MCP 路径"]
+        
+        subgraph Native_Stack ["原生工具栈"]
+            Path_Native --> Zod["Zod Schema 校验"]
+            Zod --> NativeExec["本地 JS/TS 函数执行"]
+        end
+
+        subgraph MCP_Hub ["MCP 中继枢纽"]
+            Path_MCP --> Adapt["convertMcpTool<br/>(协议适配器)"]
+            Adapt --> MCPClient["MCP Client<br/>(JSON-RPC 2.0)"]
+        end
+    end
+
+    %% 外部连接
+    NativeExec -->|"(3a) 直接操作"| LocalResources["💻 本地资源<br/>(文件/Shell/LSP)"]
+    MCPClient -->|"(3b) 跨进程/网络"| MCPServer["🔌 外部 MCP Server<br/>(GitHub/Slack/DB)"]
+
+    class Agent agent
+    class Registry registry
+    class Path_Native,Zod,NativeExec native
+    class Path_MCP,Adapt,MCPClient mcp
+    class LocalResources,MCPServer external
+```
+
+1.  **原生工具架构 (Native Tools)**：
+    - **Schema 驱动**：使用 `Zod` 定义严格的参数契约，这与 MCP 的 `inputSchema` (JSON Schema) 本质一致。
+    - **动态发现**：`ToolRegistry` 扫描本地目录与插件系统，实现工具的即插即用，对应 MCP 的 `tools/list` 发现机制。
+2.  **MCP 中继架构 (MCP Hub)**：
+    - **双轨制适配**：OpenCode 作为一个 **MCP 枢纽 (Hub)**，通过 `convertMcpTool` 自动将外部标准的 MCP 工具转换为内部可调用的 `dynamicTool`。
+    - **无感调用**：对于 Agent 而言，无论是本地的 Shell 执行器还是云端的 GitHub 工具，都被抽象为统一的接口，屏蔽了物理实现的差异。
+
+| 维度 | OpenCode 内部工具 (`Tool.Info`) | MCP 标准协议 (`Tool`) |
+| :--- | :--- | :--- |
+| **元数据** | `id`, `description` | `name`, `description` |
+| **参数约束** | `parameters` (Zod) | `inputSchema` (JSON Schema) |
+| **发现机制** | 插件扫描 / `registry.register` | `tools/list` 响应 |
+| **执行模式** | 异步函数调用 | JSON-RPC 2.0 (`tools/call`) |
+
+#### 7.8.4 核心洞察 (Architectural Insights)
 > **“A2A 决定了 Agent 之间如何分工协作（逻辑深度），而 MCP 决定了 Agent 如何与外部世界标准化连接（工具广度）。”**
 
 通过 A2A 构建“专家团队”，通过 MCP 构建“超级外挂”，OpenCode 成功演示了如何在高复杂度、高专业性的软件工程领域实现 AI Agent 的规模化落地。
+
+### 7.9 协议深度解析：MCP (Model Context Protocol) 标准
+
+MCP 并非简单的 API 包装，而是 AI 时代的**“通用神经传导协议”**。它通过将工具集成从“N x M”的硬编码模式转变为“1 + 1”的标准接入模式，极大地提升了 Agent 的扩展边界。
+
+#### 7.9.1 MCP 的三大核心支柱 (The 3 Pillars)
+
+| 支柱 | 模式映射 | 功能描述 | 典型应用 |
+| :--- | :--- | :--- | :--- |
+| **Resources (资源)** | **Read-only Proxy** | 让 Agent 以标准化方式**读取**外部数据，类似于文件系统。 | 查看日志文件、读取数据库快照。 |
+| **Tools (工具)** | **Command Pattern** | 让 Agent 执行**有副作用**的操作。 | 创建 GitHub Issue、在 Slack 发送消息。 |
+| **Prompts (提示词)** | **Template Pattern** | 提供预设的指令模板，封装领域专家知识。 | “重构代码”或“安全漏洞分析”的专项提示词。 |
+
+#### 7.9.2 传输协议：stdio vs. SSE
+
+根据部署环境的不同，MCP 支持两种主流传输协议：
+1.  **stdio (进程间通信)**：
+    - **原理**：Client 启动 Server 进程，通过标准输入输出交互。
+    - **优势**：延迟极低，安全性高（仅本地访问），适合桌面端或 CLI 应用（如 OpenCode）。
+2.  **SSE (Server-Sent Events)**：
+    - **原理**：通过 HTTP 长连接进行异步推送。
+    - **优势**：支持跨机器部署，适合云端 Agent 访问 SaaS 工具。
+
+#### 7.9.3 安全治理：MCP 的安全边界
+
+在企业场景中，MCP 的引入必须伴随严格的安全策略：
+- **能力协商 (Capability Negotiation)**：Client 与 Server 在握手阶段必须明确交换支持的能力集，禁止越权操作。
+- **沙箱化执行**：建议对本地 MCP Server 采用容器化（如 Docker）部署，限制其对宿主系统的文件访问权限。
+- **审计与追踪**：所有通过 MCP 发起的 JSON-RPC 指令必须记录在全链路审计日志中，实现行为可溯源。
+
+#### 7.9.4 MCP 协议规范细节 (Specification Details)
+
+MCP 协议严格基于 **JSON-RPC 2.0** 规范。以下是核心交互过程中的具体报文示例：
+
+##### 1. 初始化握手 (Initialization)
+在建立连接后，Client 必须发送 `initialize` 请求以协商能力。
+
+**Request (Client -> Server):**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2024-11-05",
+    "capabilities": {
+      "roots": { "listChanged": true },
+      "sampling": {}
+    },
+    "clientInfo": { "name": "Enterprise-AI-Gateway", "version": "2.1.0" }
+  }
+}
+```
+
+**Response (Server -> Client):**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "protocolVersion": "2024-11-05",
+    "capabilities": {
+      "tools": { "listChanged": true },
+      "resources": { "subscribe": true, "listChanged": true }
+    },
+    "serverInfo": { "name": "Financial-Data-Connector", "version": "1.4.0" }
+  }
+}
+```
+
+##### 2. 获取工具列表 (List Tools)
+Client 请求 Server 暴露的所有可用工具及其参数 Schema。
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/list"
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "tools": [
+      {
+        "name": "query_revenue_data",
+        "description": "查询指定企业的营收明细数据，支持语义过滤与多维汇总。",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "ticker": { "type": "string", "description": "股票代码 (如 AAPL, 600519)" },
+            "fiscal_year": { "type": "integer", "description": "财年" },
+            "report_type": { "enum": ["annual", "quarterly"], "description": "报表类型" },
+            "semantic_filter": { "type": "string", "description": "语义过滤条件，如 '仅限海外营收'" }
+          },
+          "required": ["ticker", "fiscal_year"]
+        }
+      },
+      {
+        "name": "analyze_risk_factors",
+        "description": "分析特定企业的潜在财务或法律风险因素。",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "ticker": { "type": "string", "description": "股票代码" },
+            "risk_type": { "enum": ["financial", "legal", "operational"], "description": "风险类型" }
+          },
+          "required": ["ticker"]
+        }
+      }
+    ]
+  }
+}
+```
+
+##### 3. 调用工具 (Call Tool)
+当 Agent 决定使用某个工具时，发送具体参数进行执行。
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "query_revenue_data",
+    "arguments": {
+      "ticker": "ALPHA_CORP",
+      "fiscal_year": 2024,
+      "report_type": "quarterly",
+      "semantic_filter": "营收占比超过 10% 的产品线明细"
+    }
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "成功检索到 Alpha Corp 2024 Q3 数据。核心产品 A 营收 4.2B (占比 45%), 增长率 12%。数据来源：内部财务审计系统 ERP-V5。"
+      }
+    ],
+    "isError": false
+  }
+}
+```
 
 **架构箴言**：**用 MCP 构建你的工具库（基础设施），用 A2A 编排你的专家团队（业务逻辑）。**
 
