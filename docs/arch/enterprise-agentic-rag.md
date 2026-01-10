@@ -34,10 +34,51 @@
     - [4.3 智能缓存策略：平衡一致性与权限安全 (Smart Caching Strategy)](#43-智能缓存策略平衡一致性与权限安全-smart-caching-strategy)
       - [4.3.1 核心风险：缓存中毒与越权 (The RBAC Trap)](#431-核心风险缓存中毒与越权-the-rbac-trap)
       - [4.3.2 解决方案：分层与分区缓存架构 (Layered \& Partitioned Caching)](#432-解决方案分层与分区缓存架构-layered--partitioned-caching)
-      - [4.3.3 “黄金问答集” (Golden Q\&A Set)](#433-黄金问答集-golden-qa-set)
-      - [4.3.4 缓存生命周期管理：主动失效与预测性预热 (Active Invalidation \& Predictive Warming)](#434-缓存生命周期管理主动失效与预测性预热-active-invalidation--predictive-warming)
+      - [4.3.3 “黄金问答集”与预测性预热 (Golden Q\&A \& Predictive Warming)](#433-黄金问答集与预测性预热-golden-qa--predictive-warming)
+      - [4.3.4 缓存生命周期管理：事件驱动的精准失效与重更新 (Event-Driven Invalidation \& Re-warming)](#434-缓存生命周期管理事件驱动的精准失效与重更新-event-driven-invalidation--re-warming)
       - [4.3.5 缓存全生命周期治理图 (Cache Lifecycle Governance Diagram)](#435-缓存全生命周期治理图-cache-lifecycle-governance-diagram)
-      - [4.3.6 权衡与考量 (Trade-offs: Smart Caching)](#436-权衡与考量-trade-offs-smart-caching)
+      - [4.3.5 缓存全生命周期治理图 (Cache Lifecycle Governance Diagram)](#435-缓存全生命周期治理图-cache-lifecycle-governance-diagram-1)
+      - [4.3.6 长文档摘要的高效提取策略 (Efficient Long Document Summarization)](#436-长文档摘要的高效提取策略-efficient-long-document-summarization)
+        - [1. 技术方案：分层摘要与 Map-Reduce 架构 (Hierarchical \& Map-Reduce)](#1-技术方案分层摘要与-map-reduce-架构-hierarchical--map-reduce)
+        - [2. 核心优化技巧 (Optimization Tactics)](#2-核心优化技巧-optimization-tactics)
+        - [3. 成本对比示例 (Cost Comparison)](#3-成本对比示例-cost-comparison)
+      - [4.3.7 权衡与考量 (Trade-offs: Smart Caching)](#437-权衡与考量-trade-offs-smart-caching)
+      - [4.3.7 提示词缓存优化 (Prompt Caching Optimization)](#437-提示词缓存优化-prompt-caching-optimization)
+      - [4.3.8 语义命中加速 (Semantic Cache Hit)](#438-语义命中加速-semantic-cache-hit)
+        - [1. 技术架构流：双阶段验证 (Two-Stage Verification)](#1-技术架构流双阶段验证-two-stage-verification)
+        - [2. 查询归一化与标准化设计 (Query Normalization \& Standardization Design)](#2-查询归一化与标准化设计-query-normalization--standardization-design)
+          - [2.1 归一化流水线 (Normalization Pipeline)](#21-归一化流水线-normalization-pipeline)
+          - [2.2 为什么必须进行“加工改造”？ (Design Rationale)](#22-为什么必须进行加工改造-design-rationale)
+          - [2.3 实现进阶：标准问题库 (Standard Question Library)](#23-实现进阶标准问题库-standard-question-library)
+        - [3. 语义等价性判定 (The "Judge" Model)](#3-语义等价性判定-the-judge-model)
+        - [4. 权限指纹与语义缓存的耦合 (Permission-Aware Semantic Cache)](#4-权限指纹与语义缓存的耦合-permission-aware-semantic-cache)
+        - [5. 进阶治理：可观测性与并发控制 (Advanced Governance)](#5-进阶治理可观测性与并发控制-advanced-governance)
+      - [4.3.9 成本感知淘汰策略 (Cost-Aware Eviction / FinOps)](#439-成本感知淘汰策略-cost-aware-eviction--finops)
+      - [4.3.10 FAQ 主动提取与“黄金缓存” (Proactive FAQ Extraction \& Golden Cache)](#4310-faq-主动提取与黄金缓存-proactive-faq-extraction--golden-cache)
+        - [1. FAQ 知识全生命周期：从原子数据到精准答案 (Data Journey)](#1-faq-知识全生命周期从原子数据到精准答案-data-journey)
+          - [**第一阶段：解构与坐标注入 (Deconstruction \& Injection)**](#第一阶段解构与坐标注入-deconstruction--injection)
+          - [**第二阶段：增强与拉伸 (Enrichment \& Stretching)**](#第二阶段增强与拉伸-enrichment--stretching)
+          - [**第三阶段：召回与消歧 (Recall \& Disambiguation)**](#第三阶段召回与消歧-recall--disambiguation)
+          - [**数据演变追踪表 (Data Transformation Trace)**](#数据演变追踪表-data-transformation-trace)
+        - [2. 技术实现流水线 (Extraction Pipeline)](#2-技术实现流水线-extraction-pipeline)
+        - [3. 具体实现中的核心考量 (Key Considerations)](#3-具体实现中的核心考量-key-considerations)
+        - [4. 多重语义碰撞与交互式消歧流程图 (Disambiguation Flow)](#4-多重语义碰撞与交互式消歧流程图-disambiguation-flow)
+        - [5. 语义泛化 (Semantic Generalization) —— 解决“问法多样性”](#5-语义泛化-semantic-generalization--解决问法多样性)
+          - [**(1) 核心痛点：语义鸿沟 (Semantic Gap)**](#1-核心痛点语义鸿沟-semantic-gap)
+          - [**(2) 多维度泛化策略 (Multi-dimensional Fan-out)**](#2-多维度泛化策略-multi-dimensional-fan-out)
+          - [**(3) 语义泛化处理流水线 (Generalization Pipeline)**](#3-语义泛化处理流水线-generalization-pipeline)
+          - [**(4) 关键环节深度解析**](#4-关键环节深度解析)
+          - [**(5) 收益与量化指标**](#5-收益与量化指标)
+        - [6. 版本同步与增量更新 (CDC for FAQ)](#6-版本同步与增量更新-cdc-for-faq)
+        - [7. 冲突解决逻辑 (Conflict Resolution Policy)](#7-冲突解决逻辑-conflict-resolution-policy)
+        - [8. 知识质量门禁 (Quality Gating)](#8-知识质量门禁-quality-gating)
+        - [9. 直观对比：为什么需要“层级坐标”？](#9-直观对比为什么需要层级坐标)
+        - [10. 通用化处理范式：从 Case-by-Case 到标准化协议 (Universal Extraction Protocol)](#10-通用化处理范式从-case-by-case-到标准化协议-universal-extraction-protocol)
+          - [**(1) 通用化处理流水线 (Universal Pipeline)**](#1-通用化处理流水线-universal-pipeline)
+          - [**(2) 标准分层树结构 (Normalized Tree Structure)**](#2-标准分层树结构-normalized-tree-structure)
+          - [**(3) “万能”提取 Prompt 的设计逻辑**](#3-万能提取-prompt-的设计逻辑)
+          - [**(4) 带来的核心收益**](#4-带来的核心收益)
+        - [11. 适配标准化协议的“万能”提取 Prompt 示例](#11-适配标准化协议的万能提取-prompt-示例)
     - [4.4 分层记忆架构：从 Session 到 Profile (Hierarchical Memory)](#44-分层记忆架构从-session-到-profile-hierarchical-memory)
       - [4.4.1 分层记忆架构图 (Hierarchical Memory Diagram)](#441-分层记忆架构图-hierarchical-memory-diagram)
   - [五、 多源异构场景下的 RBAC 穿透架构](#五-多源异构场景下的-rbac-穿透架构)
@@ -137,36 +178,44 @@
 
 ```mermaid
 graph TD
-    User["终端用户"] --> API["API Gateway (Authentication & Rate Limiting)"]
+    %% 样式定义
+    classDef user fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef control fill:#fff3e0,stroke:#e65100,stroke-width:2px;
+    classDef security fill:#fce4ec,stroke:#880e4f,stroke-width:2px;
+    classDef execution fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px;
+    classDef data fill:#f3e5f5,stroke:#4a148c,stroke-width:2px;
+    classDef validation fill:#fffde7,stroke:#fbc02d,stroke-width:2px;
+
+    User["终端用户"]:::user --> API["API Gateway<br/>(Auth & Rate Limit)"]:::user
     
-    subgraph Orchestration_Layer ["编排层 (Control Plane)"]
-        API --> MainAgent["主编排 Agent (Planner)"]
-        MainAgent --> SessionMgr["Session & Context Manager"]
-        SessionMgr --> PolicyEngine["策略决策点 (Policy Decision Point, PDP) / Policy Engine (RBAC/ABAC)"]
+    subgraph Box_Control ["编排层 (Control Plane)"]
+        API --> MainAgent["主编排 Agent (Planner)"]:::control
+        MainAgent --> SessionMgr["Session & Context Manager"]:::control
+        SessionMgr --> PolicyEngine["策略决策点 (PDP)<br/>Policy Engine"]:::control
     end
 
-    subgraph Security_Boundary ["安全边界 (Policy Enforcement Point, PEP)"]
-        MainAgent --> AuthGateway["策略执行点 (Policy Enforcement Point, PEP) / Auth Gateway (Token Scoping)"]
+    subgraph Box_Security ["安全边界 (PEP)"]
+        MainAgent --> AuthGateway["策略执行点 (PEP)<br/>Auth Gateway"]:::security
     end
 
-    subgraph Agentic_Sandbox ["执行层 (Execution Sandbox)"]
-        AuthGateway --> RetrievalAgent["检索 Agent (Executor)"]
-        RetrievalAgent --> ToolRegistry["Tool Registry (Jira, Git, VectorDB)"]
+    subgraph Box_Execution ["执行层 (Execution Sandbox)"]
+        AuthGateway --> RetrievalAgent["检索 Agent (Executor)"]:::execution
+        RetrievalAgent --> ToolRegistry["Tool Registry<br/>(Jira, Git, VectorDB)"]:::execution
     end
 
-    subgraph Data_Sources ["联邦数据源 (Data Plane)"]
-        ToolRegistry --> Pinecone["Pinecone (Metadata Filtering)"]
-        ToolRegistry --> Jira["Jira (OAuth Scoped)"]
-        ToolRegistry --> Confluence["Confluence (OAuth Scoped)"]
+    subgraph Box_Data ["联邦数据源 (Data Plane)"]
+        ToolRegistry --> Pinecone["Pinecone<br/>(Metadata Filtering)"]:::data
+        ToolRegistry --> Jira["Jira<br/>(OAuth Scoped)"]:::data
+        ToolRegistry --> Confluence["Confluence<br/>(OAuth Scoped)"]:::data
     end
 
-    subgraph Validation_Layer ["验证层 (Quality Assurance)"]
-        RetrievalAgent --> Critic["裁判模型 (LLM Judge / Verifier)"]
+    subgraph Box_Validation ["验证层 (Quality Assurance)"]
+        RetrievalAgent --> Critic["裁判模型<br/>(LLM Judge / Verifier)"]:::validation
         Critic -- "证据不足/不合规" --> RetrievalAgent
         Critic -- "通过" --> MainAgent
     end
 
-    MainAgent --> FinalResponse["事实综合与响应"]
+    MainAgent --> FinalResponse["事实综合与响应"]:::control
     FinalResponse --> User
 ```
 
@@ -212,30 +261,27 @@ graph TD
 
 ```mermaid
 sequenceDiagram
+    autonumber
+    rect rgb(232, 245, 233)
+    Note over Agent, Tool: 安全凭证注入流程
     participant Agent as 检索 Agent
     participant Gateway as Auth Gateway (PEP)
     participant Vault as Credential Vault
     participant Tool as Target Tool (Jira)
+    end
 
     Note over Agent, Gateway: Agent 仅持有 Vault 引用，不持有 Token
 
-    Agent->>Gateway: 1. 发起调用 (Tool Request)<br/>Header: X-Vault-Ref: "vault:jira:user_123"
+    Agent->>+Gateway: 1. 发起调用 (Tool Request)<br/>Header: X-Vault-Ref: "vault:jira:user_123"
     
-    activate Gateway
-    Gateway->>Vault: 2. 请求凭证 (Resolve Ref)
-    activate Vault
-    Vault-->>Gateway: 3. 返回 OAuth Access Token (Plain)
-    deactivate Vault
+    Gateway->>+Vault: 2. 请求凭证 (Resolve Ref)
+    Vault-->>-Gateway: 3. 返回 OAuth Access Token (Plain)
     
     Gateway->>Gateway: 4. 注入 Authorization Header<br/>(Bearer eyJhbGci...)
     
-    Gateway->>Tool: 5. 转发请求 (With Token)
-    activate Tool
-    Tool-->>Gateway: 6. 返回数据
-    deactivate Tool
-    
-    Gateway-->>Agent: 7. 返回结果
-    deactivate Gateway
+    Gateway->>+Tool: 5. 转发请求 (With Token)
+    Tool-->>-Gateway: 6. 返回数据
+    Gateway-->>-Agent: 7. 返回结果
 ```
 
 ##### 3.1.3 权衡与考量 (Trade-offs: Credential Vaulting)
@@ -447,6 +493,7 @@ TaskResult（子 → 主）建议结构：
 
 ```mermaid
 stateDiagram-v2
+    %% 状态样式定义
     [*] --> Pending: TaskRequest Created
     
     state "Running (Executing)" as Running {
@@ -465,6 +512,12 @@ stateDiagram-v2
 
     Completed --> [*]
     Failed --> [*]
+
+    %% 应用颜色样式
+    style Pending fill:#e1f5fe,stroke:#01579b
+    style Running fill:#fff3e0,stroke:#e65100
+    style Completed fill:#e8f5e9,stroke:#1b5e20
+    style Failed fill:#fce4ec,stroke:#c62828
 
     note right of Running
       Emits "TaskProgress" events
@@ -597,35 +650,199 @@ Agentic RAG 由于存在循环迭代，Token 消耗具有不可预测性。
 
 *   **User_ACL_Fingerprint 实现**：将用户所属的所有 UserGroups 和 Roles 排序后进行 Hash 签名。只有具备完全相同权限集合的用户才能共享同一个缓存项。
 
-#### 4.3.3 “黄金问答集” (Golden Q&A Set)
-针对 Top 100 高频热点问题（如“如何申请 VPN”），建议引入**人工干预机制**：
-*   **离线生成**：由运营人员或专家编写标准答案。
-*   **人工审核**：确保无敏感信息泄露。
-*   **强制命中**：在 Query Classifier 阶段直接拦截，跳过所有 RAG 流程，直接返回标准答案。
-*   **收益**：0 成本、0 延迟、100% 一致性、100% 安全。
+#### 4.3.3 “黄金问答集”与预测性预热 (Golden Q&A & Predictive Warming)
 
-#### 4.3.4 缓存生命周期管理：主动失效与预测性预热 (Active Invalidation & Predictive Warming)
+针对平台高频热点问题，**主动生成答案并预热缓存是企业级 RAG 从“被动服务”转向“主动治理”的成熟标志**。该策略融合了人工精选的“权威性”与 AI 发现的“时效性”。
 
-为了解决“数据更新不及时”和“冷启动延迟”问题，建议建立**事件驱动的缓存治理闭环**，而非仅依赖 TTL 被动过期。
+**1. 核心构成与合理性：**
 
-**A. 事件驱动的主动失效 (Event-Driven Invalidation)**
-建议建立**三级失效触发矩阵**，不仅关注内容，更必须关注权限与系统状态：
+- **黄金问答集 (Golden Q&A Set)**：
+  - **定位**：针对 Top 100 极其稳定的高频问题（如“VPN 申请流程”、“公司班车表”）。
+  - **生产**：由业务专家直接编写标准答案，确保 **100% 安全性** 与 **100% 权威一致性**。
+- **预测性预热 (Predictive Warming)**：
+  - **定位**：针对近期突发的爆款问题（如“公司昨日发布的年终奖政策”）。
+  - **生产**：通过 AI 自动发现并生成，辅以快速人工审核。
+  - **价值**：利用 **算力杠杆效应**，用一次高能级模型（如 GPT-4o）的离线推理，消除成千上万次在线重复检索的 **冷启动延迟**，FinOps 收益极高。
 
-1.  **内容源变更 (Content Events)**
-    *   *触发器*：Wiki 文档编辑、Jira 状态流转、代码提交。
-    *   *动作*：利用**倒排索引 (Inverted Index)**，查找 `Ref(Doc_ID) -> [Cache_Key_1, Cache_Key_2]`，实现精准删除，避免“误杀”无辜缓存。
+**2. 实现管线 (Active Governance Pipeline)：**
 
-2.  **权限/密级变更 (ACL Events) —— 🚨 高危**
-    *   *场景*：某文档从“内部公开”调整为“绝密”，或某用户被移出“高管组”。
-    *   *动作*：
-        *   **文档降级**：立即清除所有引用该文档的缓存（无论 L1/L2）。
-        *   **用户变更**：建议在计算 `User_ACL_Fingerprint` 时引入 `Epoch` 版本号，一旦检测到 IAM 变更事件，全局推高版本号，迫使旧指纹瞬间失效。
+通过建立“发现-生成-审核”的闭环，将 RAG 系统升级为具备运营能力的知识中枢：
 
-3.  **系统/Prompt 迭代 (System Events)**
-    *   *场景*：优化了 RAG 的 System Prompt 或升级了基座模型。
-    *   *动作*：在 Cache Key 中引入 `v={System_Version}` 因子。系统发布时自动 `v++`，实现无痛的“软失效”和全量更新。
+- **主动发现 (Semantic Mining)**：
+  - 实时聚类：对 **Cache Miss** 请求进行 Embedding 聚类，而非仅看字符串匹配。
+  - 异常检测：若某语义簇在 24 小时内密度激增（如 > 50 次请求），自动将其定义为“热点候选”报警。
+- **智能生成与终审 (HITL)**：
+  - **高能级生成**：调用最强模型（不计成本）生成包含 **完美引用溯源** 的标准答案草稿。
+  - **专家确认**：引入运营人员“一键终审”界面，审核通过后即刻打入 L1 公共缓存区，并可手动标记为“黄金问答”。
+- **短路拦截 (Query Interception)**：
+  - 在 **Query Classifier** 阶段，若判定属于热点或黄金问答语义，直接 **短路 (Short-circuit)** 后续 RAG 流程，毫秒级返回标准答案。
 
-**C. 新知识注入与语义失效 (Semantic Invalidation for New Evidence)**
+**4. 实现落地的关键挑战与对策 (Implementation Challenges & Mitigation)：**
+
+在工程实现时，必须处理以下四个“深水区”问题：
+
+- **挑战 A：语义聚类的噪音与颗粒度 (Clustering Noise & Granularity)**
+  - *风险*：若聚类太细，预热覆盖率低；若太粗，会导致“张冠李戴”（将 VPN 问题和内网权限问题混为一谈）。
+  - *对策*：采用 **HDBSCAN** 等密度聚类算法，配合 **Centroid 压缩**。仅对 Top-N 的质心进行预热，并使用 `Cross-Encoder` 在拦截阶段进行二次语义等价性判定（确保 98%+ 的匹配度）。
+- **挑战 B：权限泄露风险 (Permission Leakage) —— 🚨 极重要**
+  - *风险*：Predictive Warming 可能是基于某个高权限用户的提问生成的（例如包含特定项目代号）。若将其放入公共 L1 缓存，会导致低权限用户看到敏感信息。
+  - *对策*：**权限分区预热 (Permission-Partitioned Warming)**。对于自动发现的热点，默认标记为 `Restricted`，仅在缓存键中包含 `User_ACL_Fingerprint` 的副本。只有经过人工审核并标记为 `Public` 的答案，才能进入全局 L1 共享。
+- **挑战 C：触发阈值的动态调整 (Dynamic Thresholding)**
+  - *风险*：固定阈值（如 > 50次）在不同部门或不同时间段（如节假日）会失效。
+  - *对策*：引入 **Z-Score 异常检测**。监控请求密度的增长率（Velocity）而非绝对值。若 1 小时内的请求数超过过去 7 天同时间段均值的 3 个标准差，即刻触发预热。
+- **挑战 D：热点的“退潮”管理 (Staleness & Retirement)**
+  - *风险*：预热缓存占据大量内存，且内容可能随时间过时。
+  - *对策*：**衰减型 TTL (Decaying TTL)**。Predictive Warming 初始有效期短（如 4h），若持续被命中则自动延长；若 24h 未被命中，自动从 L1 降级回普通向量检索逻辑。
+
+**3. 核心收益总结：**
+- **0 成本与 0 延迟**：后续重复请求不再消耗在线推理算力。
+- **口语一致性**：确保企业关键变动时期“一个声音说话”。
+- **安全加固**：通过人工审核彻底排除幻觉风险。
+
+#### 4.3.4 缓存生命周期管理：事件驱动的精准失效与重更新 (Event-Driven Invalidation & Re-warming)
+
+为了解决“文档更新后缓存依然返回旧答案”的问题，必须建立一套**从数据源到缓存的拓扑追踪机制**，实现从“被动过期”向“主动失效”的跨越。
+
+**1. 核心挑战：Query 与 Document 的多对多映射**
+RAG 缓存通常是以 `Query` 为键的，但一个答案可能引用了 `Doc_A` 的片段 1 和 `Doc_B` 的片段 2。当 `Doc_A` 更新时，我们如何知道哪些 `Query` 的缓存失效了？
+
+**2. 设计模式：文档-缓存倒排索引 (Document-to-Cache Inverted Index)**
+
+建议在缓存层引入一个轻量级的关联表（通常存储在 Redis 或元数据库中）：
+
+| 文档 ID (Doc_ID) | 关联的缓存键列表 (Cache_Keys) | 密级/版本号 |
+| :--- | :--- | :--- |
+| `wiki_789` | `[q_hash_1, q_hash_5, q_hash_10]` | `v2 / Public` |
+| `jira_101` | `[q_hash_2, q_hash_3]` | `v1 / Restricted` |
+
+**3. 级联失效与重更新流 (Cascading Invalidation & Re-warming Flow)：**
+
+- **监听到变更事件 (Webhook/CDC)**：
+  - 当外部系统（Wiki, Jira, Git）发生 `Update` 或 `Delete` 时，通过 Webhook 或 CDC (Change Data Capture) 捕获事件。
+- **权限/密级变更 (ACL Events) —— 🚨 极重要**：
+  - 若文档密级从“公开”变为“绝密”，必须根据倒排索引立即 **秒级爆破** 所有相关缓存。
+  - 对于用户权限变更，建议在 `User_ACL_Fingerprint` 中引入 `Epoch` 版本号，一旦 IAM 发生变更，全局推高该版本号，迫使旧指纹缓存瞬间失效。
+- **精准失效与重更新 (Targeted Re-fill)**：
+  - 根据 `Doc_ID` 查询倒排索引，获取所有受影响的 `Cache_Keys` 并执行删除。
+  - **重要对策**：对于那些被标记为“高频 (Hot)”或“黄金问答”的 Cache Key，后台自动触发一次新的 RAG 任务进行 **静默预热**。
+  - **价值**：确保当用户再次提问时，看到的已经是基于新文档生成的答案，且没有感受到 RAG 检索的冷启动延迟。
+
+**4. 兜底机制：语义版本号 (Semantic Versioning)**
+- 在每个缓存项的元数据中存储 `Doc_Version_List`。
+- 即使倒排索引因 system 故障未能及时更新，在 **Semantic Cache Hit** 阶段，引擎会快速核对引用的文档当前版本号。若版本不一致，强制触发 Cache Miss。
+
+**5. 隐性失效：新知识注入引发的缓存过期 (Hidden Invalidation due to New Knowledge)**
+
+你提出的“文档 B、C 未变，但新文档 D 的出现导致答案 A 失效”是一个非常深刻的**非单调逻辑 (Non-monotonic Logic)** 问题。这在企业动态知识库中不仅可能，而且非常合理。
+
+- **场景复现**：
+  - *提问 A*：“公司如何报销打车费？”
+  - *旧答案 (基于 B/C)*：“使用报销系统 X 录入发票。”
+  - *新文档 D*：“即日起打车费统一通过企业滴滴支付，无需手动报销。”
+  - *冲突*：B 和 C 依然有效（可能记录的是旧流程），但 D 使得 A 的缓存答案变得具有误导性。
+
+- **对策 1：反向语义探测 (Reverse Semantic Probing)**
+  - **工程落地细节 (Technical Implementation)**：
+    - **避坑指南：不要使用大文档全文**：大文档全文向量化会产生严重的“语义稀释”且受限于模型 Token 窗口（如 8k 限制），导致微小的知识变更被背景噪音淹没，从而引发探测失效。
+    - **策略 A：增量摘要探测 (Delta Summary Probing) —— 推荐方案**：
+      - *做法*：使用低能级模型（如 GPT-4o-mini）提取 D 的“变更摘要”或“知识要点”（如：“修改了打车报销流程，改为滴滴直付”）。
+      - *优势*：摘要语义集中且精确，用其 Embedding 进行探测能极大提升对“隐性冲突”的识别率。
+
+  - **UML 逻辑流：反向语义探测时序 (Reverse Semantic Probing Sequence)**
+  ```mermaid
+  sequenceDiagram
+      autonumber
+      participant DS as "数据源 (Data Source)"
+      participant KI as "知识入库引擎 (Ingestor)"
+      participant PE as "探测引擎 (Probing Engine)"
+      participant CS as "缓存向量库 (Cache Vector Store)"
+      participant RM as "预热引擎 (Re-warming Agent)"
+
+      DS->>KI: "发送新文档 D (Webhook/CDC)"
+      KI->>PE: "触发隐性失效检测"
+      rect rgb(240, 248, 255)
+      Note over PE: "提取增量摘要 (Delta Summary)"
+      PE->>PE: "LLM 提炼知识要点摘要"
+      PE->>PE: "生成摘要 Embedding"
+      end
+      PE->>+CS: "反向检索相似 Query (Similarity > 0.85)"
+      CS-->>-PE: "返回受影响的 Cache Keys [Q_A, Q_X...]"
+      
+      loop "对每个受影响的 Key"
+          PE->>CS: "标记状态: STALE_BY_CONFLICT"
+          PE->>RM: "发起静默预热请求"
+          RM->>RM: "执行完整 RAG 并更新 L1/L2 缓存"
+      end
+  ```
+
+  - **对策 2：语义漂移采样校验 (Semantic Drift Sampling)**
+  - 对于高频缓存项，不采取 100% 命中的策略。
+  - **策略**：每 100 次请求中抽取 1 次执行完整的 RAG（Bypass Cache），对比生成的“新答案”与“缓存答案”的语义差异。
+  - 若差异超过阈值（探测到语义漂移），立即废弃该缓存项并触发更新。
+
+- **对策 3：话题聚类失效 (Topic-Based Invalidation)**
+  - 将缓存按话题（Topic Cluster）进行归类。当新文档 D 归属于“财务/报销”话题时，该话题下所有的热点缓存均触发一次轻量级的重验证。
+
+**6. 隐性失效治理流程图 (Hidden Invalidation Governance Flow)**
+
+```mermaid
+graph TD
+    %% 样式定义
+    classDef event fill:#d1ecf1,stroke:#0c5460,stroke-width:2px;
+    classDef engine fill:#d4edda,stroke:#155724,stroke-width:2px;
+    classDef action fill:#f8d7da,stroke:#721c24,stroke-width:2px;
+    classDef sampling fill:#fff3cd,stroke:#856404,stroke-width:2px;
+
+    subgraph Box1 ["(1) 事件触发层"]
+        D["新文档 D 创建/变更"]:::event
+    end
+
+    subgraph Box2 ["(2) 探测引擎 (Probing Engine)"]
+        D --> LLM["LLM 提取知识要点摘要<br/>(Delta Summary)"]:::engine
+        LLM --> Emb["生成摘要 Embedding"]:::engine
+        Emb --> Search["反向检索缓存向量库<br/>(Cache Vector Store)"]:::engine
+    end
+
+    subgraph Box3 ["(3) 失效决策与执行"]
+        Search --> Match{"相似度 > 0.85?"}:::action
+        Match -- "Yes (探测到冲突)" --> Mark["标记缓存失效 / 删除"]:::action
+        Mark --> Rewarm["后台静默预热<br/>(Silent Re-warming)"]:::action
+        Match -- "No" --> Valid["保持缓存有效"]:::action
+    end
+
+    subgraph Box4 ["(4) 采样闭环校验"]
+        Req["1% 用户请求采样"]:::sampling --> Bypass["强制绕过缓存执行 RAG"]:::sampling
+        Bypass --> Compare["新旧结果语义对比"]:::sampling
+        Compare --> Drift{"检测到明显差异?"}:::sampling
+        Drift -- "Yes" --> Mark
+    end
+
+    %% 应用样式
+    class D event;
+```
+
+- **UML 状态机：缓存条目生命周期 (Cache Entry State Machine)**
+```mermaid
+stateDiagram-v2
+    [*] --> EMPTY: "初始状态"
+    EMPTY --> VALID: "RAG 流程执行完成 (回写)"
+    
+    state VALID {
+        [*] --> FRESH: "刚创建/命中"
+        FRESH --> EXPIRED: "TTL 到期"
+        FRESH --> STALE_BY_CDC: "依赖文档显式更新"
+        FRESH --> STALE_BY_CONFLICT: "探测到新知识冲突 (隐性失效)"
+    }
+
+    VALID --> REWARMING: "触发预热 (High Freq)"
+    REWARMING --> VALID: "预热成功"
+    
+    STALE_BY_CDC --> EMPTY: "彻底失效/删除"
+    STALE_BY_CONFLICT --> REWARMING: "后台自动对齐"
+    EXPIRED --> EMPTY: "被 LRU 淘汰"
+```
+
+#### 4.3.5 缓存全生命周期治理图 (Cache Lifecycle Governance Diagram)
 
 解决**“隐性失效”**问题：当新文档 A3 发布时，虽然旧答案 A 依赖的 A1/A2 未变，但 A3 的出现可能使 A 变得过时或错误。
 *   **挑战**：传统的 `Ref(Doc_ID)` 倒排索引无法处理“新文档”与“旧查询”的关联。
@@ -683,11 +900,619 @@ flowchart TD
     class P write
 ```
 
-#### 4.3.6 权衡与考量 (Trade-offs: Smart Caching)
+#### 4.3.6 长文档摘要的高效提取策略 (Efficient Long Document Summarization)
+
+在处理长文档（如 500 页的 PDF 或超长代码库）时，直接调用 LLM 进行摘要提取会面临 **Token 溢出**、**推理成本高昂** 以及 **中间信息丢失 (Lost in the Middle)** 的挑战。
+
+为了实现“低成本且高效”的摘要提取，推荐采用以下架构策略：
+
+##### 1. 技术方案：分层摘要与 Map-Reduce 架构 (Hierarchical & Map-Reduce)
+
+```mermaid
+flowchart TD
+    %% 样式定义
+    classDef chunk fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef worker fill:#fff3e0,stroke:#e65100,stroke-width:2px;
+    classDef final fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+
+    Doc["(1) 超长原始文档<br/>(100k+ Tokens)"] --> Split["(2) 智能分片 <br/>(Smart Chunking)<br/>基于语义段落或标题结构"]
+    
+    subgraph Map_Phase ["(3) 并行映射阶段 (Map Phase) - L3 模型"]
+        direction LR
+        C1["Chunk 1"]:::chunk --> S1["小块摘要 1"]:::worker
+        C2["Chunk 2"]:::chunk --> S2["小块摘要 2"]:::worker
+        Cn["Chunk n"]:::chunk --> Sn["小块摘要 n"]:::worker
+    end
+    
+    Split --> C1 & C2 & Cn
+    
+    subgraph Reduce_Phase ["(4) 聚合缩减阶段-L2/L1 模型"]
+        direction TB
+        S1 & S2 & Sn --> Agg["(5) 摘要聚合与去重<br/>(Merging & Deduplication)"]
+        Agg --> Refine["(6) 语义精炼与结构化<br/>(Refining & Formatting)"]
+    end
+    
+    Refine --> Final["(7) 最终知识要点摘要<br/>(Final Delta Summary)"]:::final
+```
+
+##### 2. 核心优化技巧 (Optimization Tactics)
+
+1.  **能级路由 (Model Tiering)：高吞吐与成本平衡**
+    - **Map 阶段（分片扫描）**：采用 **L3 级模型**（如 Gemini 3 Flash、Claude Haiku）。
+        - *逻辑*：Map 任务具有高度重复性和低推理深度的特点。L3 模型凭借极低的 Token 单价（通常比 L1 便宜 20-50 倍）和原生的大上下文窗口，可以极速完成数千个分片的初步清理。
+        - *产出*：生成每个分片的“事实孤岛（Fact Islands）”，将原始噪音文本压缩 80% 以上。
+    - **Reduce 阶段（全局合成）**：采用 **L1/L2 级模型**（如 Gemini 3 Pro、Claude Sonnet）。
+        - *逻辑*：Reduce 任务涉及跨分片的逻辑对齐、矛盾冲突仲裁及全局语义建模，需要极强的“全局视野”。
+        - *产出*：确保最终摘要不是碎片的简单拼接，而是具有逻辑连贯性的深度洞察。
+
+2.  **提取式摘要优先 (Extraction-First)：从“阅读理解”转向“断言提取”**
+    - **预处理降噪**：在 LLM 介入前，利用 TF-IDF 或 RAKE 算法快速识别文档中的高权重关键词，并结合小型 Embedding（如 BGE-small）过滤掉文档中的页眉、页脚、版权声明等“无意义噪音”。
+
+    ###### 2.1 关键词提取算法对比与语言适配
+
+    | 维度 | **TF-IDF** | **RAKE** |
+    | :--- | :--- | :--- |
+    | **核心优势** | 擅长过滤通用词，突出跨文档的“独特性”特征。 | 无需语料库，仅靠单篇文档的共现逻辑提取高频短语。 |
+    | **中英文适配** | **中规中矩**。中文需依赖 `jieba` 等分词器，对分词质量敏感。 | **英文极佳，中文需定制**。高度依赖标点和停用词作为边界。 |
+    | **短语提取能力** | 弱（通常提取单字/词），需结合 N-Gram。 | **强**（天然提取复合短语，如 "Vector Database"）。 |
+    | **计算复杂度** | 低（适合离线批处理或大规模倒排索引）。 | 极低（适合实时、在线的单篇摘要提取）。 |
+
+    ###### 2.2 语言处理差异分析 (Lingual Adaption)
+
+    在处理中英文文档时，两者的底层逻辑存在显著差异：
+
+    1.  **分词依赖 (Tokenization)**：
+        - **英文**：两者均表现优异。英文天然以空格分词，RAKE 可以通过空格轻松识别候选短语。
+        - **中文**：**必须先进行分词 (Segmentation)**。TF-IDF 在中文分词后效果较好；而 RAKE 在中文中由于缺乏天然空格，必须依赖分词器切分出的词性或特定的停用词列表来模拟“边界”，否则提取出的往往是断裂的碎片。
+    2.  **停用词机制 (Stop-words)**：
+        - TF-IDF 依赖停用词表来过滤“的、了、是”等高频无意义词。
+        - RAKE 则将停用词作为“分隔符”。在中文中，如果停用词表不全，RAKE 会将不相关的词连在一起形成超长无意义短语。
+
+    **中文适配代码片段 (使用 jieba)：**
+
+    ```python
+    import jieba.analyse
+
+    # 中文 TF-IDF 提取
+    def extract_chinese_tfidf(text, top_k=5):
+        # jieba 内部集成了 IDF 语料库
+        return jieba.analyse.extract_tags(text, topK=top_k)
+
+    # 中文 RAKE 模拟 (需要先分词)
+    def extract_chinese_rake_sim(text):
+        words = jieba.lcut(text)
+        space_text = " ".join(words) # 模拟英文空格环境
+        # 随后再调用 RAKE 库处理 space_text
+        ...
+    ```
+
+    **Python 代码示例：**
+
+    ```python
+    # TF-IDF 实现示例 (使用 Scikit-Learn)
+    from sklearn.feature_extraction.text import TfidfVectorizer
+
+    def extract_keywords_tfidf(documents, top_k=5):
+        vectorizer = TfidfVectorizer(stop_words='english')
+        tfidf_matrix = vectorizer.fit_transform(documents)
+        feature_names = vectorizer.get_feature_names_out()
+        
+        # 提取第一个文档的前 K 个关键词
+        first_doc_vector = tfidf_matrix[0].toarray()[0]
+        sorted_indices = first_doc_vector.argsort()[::-1]
+        return [feature_names[i] for i in sorted_indices[:top_k]]
+
+    # RAKE 实现示例 (使用 nlp_rake)
+    import nlp_rake
+
+    def extract_keywords_rake(text, max_words=2, min_freq=1):
+        extractor = nlp_rake.Rake(max_words=max_words, min_freq=min_freq)
+        keywords = extractor.extract(text)
+        return [k[0] for k in keywords[:5]] # 返回得分最高的前 5 个短语
+    ```
+
+    - **Prompt 范式迁移**：
+        - *传统做法*：“请总结这段文字。”（容易导致 LLM 生成笼统的废话）。
+        - *优化做法*：“请从这段文字中提取所有关于 [系统配置参数] 的**原子断言 (Atomic Assertions)**。如果不存在，直接返回空。”
+        - *收益*：通过将“生成式总结”降级为“结构化提取”，不仅显著减少了输出 Token（降低成本），还极大提高了信息的精确度。
+
+3.  **增量更新 (Delta-Only Processing)：基于哈希指纹的最小化重算**
+    - **哈希链路 (Hashing Chain)**：为文档的每个物理分片计算 MD5/SHA-256 指纹。
+    - **变更检测**：当文档更新时，通过 CDC 链路识别出具体哪些分片的哈希值发生了变化。
+    - **按需重算**：系统仅对“哈希失效”的分片重新触发 Map 任务。对于未变的分片，直接复用上一次的摘要结果进入 Reduce 阶段。
+    - *工程价值*：在处理长达数万行的代码库或持续更新的技术手册时，这种“局部重算”机制可节省 90% 以上的计算资源。
+
+4.  **分片上下文携带 (Chunk Overlapping & Metadata)：治理语义断层**
+    - **精简上下文滑动窗口 (Sliding Context Window)**：在对 Chunk N 进行摘要时，不仅输入该块内容，还以 `System Message` 的形式喂入 Chunk N-1 的**精简摘要**。
+    - **元数据锚点 (Metadata Anchoring)**：在每个摘要块中强制注入原始文档的章节 ID、行号范围或实体锚点。
+    - *收益*：有效解决了 Map-Reduce 架构常见的“断章取义”问题。例如，Chunk N 中出现的代词“它”或未定义的缩写，可以通过 N-1 的上下文得到正确还原，保证了全局语义的一致性。
+
+##### 3. 成本对比示例 (Cost Comparison)
+
+| 策略 | 估算成本 (100k Tokens) | 质量 | 延迟 |
+| :--- | :--- | :--- | :--- |
+| **直接全量总结 (L1)** | ~$1.50 | 极高，但易受 Lost in Middle 影响 | 高 |
+| **Map-Reduce (L3 + L2)** | **~$0.08** | 高 (结构化好，无信息遗漏) | 中 (可高度并行) |
+| **提取式过滤 + LLM** | ~$0.15 | 中 (可能丢失深层语义关联) | **极低** |
+
+---
+
+#### 4.3.7 权衡与考量 (Trade-offs: Smart Caching)
 
 - **性能收益 vs. 管理开销**：缓存极大降低了响应延迟和 Token 成本，但引入了复杂的 `Fingerprint` 计算和主动失效逻辑。
 - **一致性 vs. 权限隔离**：过度共享缓存会导致越权，过度隔离（按用户隔离）会导致缓存命中率极低。`ACL Fingerprint` 是目前兼顾二者的平衡点。
 - **语义失效的成本**：`Reverse Semantic Search` 虽然强大，但需要额外的向量库存储查询历史，并持续运行扫描任务。建议仅在“高频且对时效性极度敏感”的业务域开启。
+
+#### 4.3.7 提示词缓存优化 (Prompt Caching Optimization)
+
+在复杂的 Agentic RAG 流程中，System Prompt 和检索到的 Context 往往占据了 Token 消耗的 80% 以上。利用 LLM 厂商提供的 **Prompt Caching (如 Anthropic Prompt Caching, OpenAI Context Caching)** 可以显著降低首字延迟 (TTFT) 和成本。
+
+- **静态前缀缓存 (Static Prefix Caching)**：将通用的 System Prompt、工具定义 (Tool Definitions) 设置为缓存点。
+- **上下文块缓存 (Context Block Caching)**：在 RAG 检索后，将召回的 Top-K 文档块按顺序拼接并设置缓存锚点。
+- **收益**：对于长上下文任务，最高可降低 **90% 的输入成本** 和 **80% 的延迟**。
+
+#### 4.3.8 语义命中加速 (Semantic Cache Hit)
+
+传统的 Key-Value 缓存依赖字符串完全匹配。引入 **语义缓存 (Semantic Cache)** 可以识别意思相近的提问。
+
+- **工作流**：
+    1. 计算当前 Query 的 Embedding。
+    2. 在缓存向量库中进行相似度检索。
+    3. 若 `Similarity > 0.98`（极高阈值），直接返回对应缓存结果。
+- **风险控制**：语义命中仅适用于 **L1/L2 级别** 的公共知识，对于涉及个人隐私或极度精确的数据（如“我的余额是多少”），应禁用语义命中。
+
+**🔥 深度实现进阶 (Implementation Deep Dive)：**
+
+在生产级实现中，单纯依靠向量相似度往往会引入“语义偏离”风险。建议引入以下进阶机制：
+
+##### 1. 技术架构流：双阶段验证 (Two-Stage Verification)
+
+为了平衡速度与精度，推荐采用“粗筛+精排”的漏斗架构：
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as 用户 (User)
+    participant C as 语义缓存引擎 (Semantic Cache Engine)
+    participant V as 向量库 (Vector Store)
+    participant E as Cross-Encoder / 小模型
+    participant R as RAG 执行引擎
+
+    U->>+C: 输入原始 Query ("vpn连不上了...")
+    
+    rect rgb(240, 248, 255)
+    Note over C, V: 阶段一：向量粗筛 (Vector Search)
+    C->>C: 查询归一化 (Canonicalization)
+    C->>+V: 向量检索 (Top-1)
+    V-->>-C: 返回相似项 (Score: 0.96)
+    end
+    
+    alt 分数 > 0.98 (极高置信度)
+        C-->>U: 直接返回缓存结果 (L1 Hit)
+    else 分数在 0.92 ~ 0.98 (灰度区)
+        rect rgb(255, 245, 230)
+        Note over C, E: 阶段二：交叉验证 (Cross-Encoder Re-rank)
+        C->>+E: 提交 {Query, Cache_Key} 进行精排
+        E->>E: 语义等价性判定 (Entailment Check)
+        end
+        alt 判定为等价 (True)
+            E-->>-C: 确认命中
+            C-->>U: 返回缓存结果 (L2 Hit)
+        else 判定为不等价 (False)
+            E-->>-C: 拒绝命中
+            C->>+R: 触发完整 RAG 流程
+            R-->>-U: 返回新生成的答案
+        end
+    else 分数 < 0.92 (低相关)
+        C->>+R: 触发完整 RAG 流程
+        R-->>-U: 返回新生成的答案
+    end
+    deactivate C
+```
+
+##### 2. 查询归一化与标准化设计 (Query Normalization & Standardization Design)
+
+在被动缓存（Passive Caching）中，直接缓存“原始问题”与“答案”是低效的。因为用户的提问具有极大的随机性（口语化、错别字、情绪化、中英混杂）。
+
+**核心哲学**：不直接缓存“问题”，而是缓存**“语义意图 (Semantic Intent)”**。这需要将原始问题映射到一个**“标准提问空间 (Canonical Question Space)”**。
+
+###### 2.1 归一化流水线 (Normalization Pipeline)
+
+推荐在进入语义缓存之前，执行以下流水线：
+
+```mermaid
+flowchart LR
+    %% 样式定义
+    classDef input fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef process fill:#f5f5f5,stroke:#9e9e9e,stroke-dasharray: 5 5;
+    classDef model fill:#fff3e0,stroke:#e65100,stroke-width:2px;
+    classDef storage fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+
+    Raw["(1) 原始提问<br/>'vpn连不上了...咋整？'"]:::input --> PII["(2) 隐私脱敏 (PII Masking)<br/>屏蔽姓名、ID、内部 IP"]:::process
+    PII --> Context["(3) 上下文注入<br/>将'它'指代还原为具体对象"]:::process
+    Context --> LLM["(4) 意图提炼 (LLM Tier 3)<br/>去除情绪、修饰词、口语"]:::model
+    LLM --> Canonical["(5) 标准提问 (Canonical)<br/>'VPN 连接故障排查'"]:::model
+    
+    Canonical --> Vec["(6) 向量化 (Embedding)"]:::process
+    Vec --> Cache["(7) 语义缓存检索/写入"]:::storage
+
+    subgraph Design_Goals ["设计目标"]
+        G1["语义降维 (Dimensionality Reduction)"]
+        G2["隐私隔离 (Privacy Isolation)"]
+        G3["跨语种对齐 (Lingual Alignment)"]
+    end
+```
+
+###### 2.2 为什么必须进行“加工改造”？ (Design Rationale)
+
+1.  **提高碰撞概率 (Hit Rate Optimization)**：
+    - 原始提问：`“vpn 怎么连不上了，帮帮我”` 与 `“VPN连接失败排查”` 在向量空间虽然接近，但仍有距离。
+    - 归一化后：两者均指向 `“VPN 连接故障排查”`，实现 100% 碰撞。
+2.  **隐私脱敏 (Privacy-First Caching)**：
+    - 原始提问可能包含 `“张三的 VPN 连不上了”`。如果不脱敏直接缓存，其他用户搜索 VPN 时可能会命中包含 `“张三”` 的缓存项，造成隐私泄露。
+    - 归一化过程将 `“张三”` 抽象为 `“用户”`，确保缓存池的纯净与合规。
+3.  **消除上下文依赖 (Context De-referencing)**：
+    - 用户问：`“它怎么用？”`（前文提到了 VPN）。
+    - 归一化引擎结合 Session Context，将其改写为 `“VPN 使用说明”`。这样该缓存项才能被其他没有相同前文的用户复用。
+
+###### 2.3 实现进阶：标准问题库 (Standard Question Library)
+
+在企业内部，可以进一步将 Canonical Query 与企业的 **“标准知识条目 (Knowledge Snippets)”** 挂钩。
+
+- **多对一映射**：N 个 Raw Queries -> 1 个 Canonical Query -> 1 个 Verified Answer。
+- **冷启动治理**：管理员可以预先导入 100 个高频标准问题及其 Canonical 形式，实现系统上线的“首日高命中率”。
+
+##### 3. 语义等价性判定 (The "Judge" Model)
+
+在灰度区，我们不关心向量距离，只关心**逻辑蕴含 (Logical Entailment)**。
+- **推荐方案**：使用专门的 `Cross-Encoder` 模型（如 `cross-encoder/ms-marco-MiniLM-L-6-v2`）。它同时输入两个句子，输出 0-1 的得分。
+- **优点**：Cross-Encoder 的精度远高于双塔架构（Vector Search），能识别出“我可以”与“我不可以”这种向量距离近但语义相反的微小差异。
+
+##### 4. 权限指纹与语义缓存的耦合 (Permission-Aware Semantic Cache)
+
+语义命中必须在 **“权限分区”** 内进行。
+
+- **逻辑边界**：缓存项在存储时必须携带 `ACL_Fingerprint`。
+- **检索约束**：
+  ```sql
+  -- 伪 SQL 逻辑
+  SELECT answer FROM semantic_cache 
+  WHERE vector_similarity(query_vector, cache_vector) > 0.92
+  AND acl_fingerprint = CURRENT_USER_ACL_FINGERPRINT
+  LIMIT 1;
+  ```
+- **原则**：**绝对不允许跨权限指纹进行语义命中**。即使两个提问语义完全相同，如果用户所属的权限组不同，也必须重新执行 RAG 或从其所属的分区中查找。
+
+##### 5. 进阶治理：可观测性与并发控制 (Advanced Governance)
+
+在极高并发的生产环境中，语义缓存还需要解决“缓存击穿”与“语义漂移”问题：
+
+- **请求合并 (Request Collapsing / Joining)**：
+  - *场景*：当一个爆款事件发生时（如“年终奖发放规则”），可能有 1000 个用户在 1 秒内问类似问题。
+  - *机制*：如果语义缓存 Miss，引擎不应立即发起 1000 个 RAG 任务，而是针对该语义空间建立一个 **“执行锁 (Execution Lock)”**，让后续 999 个请求挂起等待，直到第一个任务回写缓存。
+- **语义漂移检测 (Semantic Drift Detection)**：
+  - *场景*：文档库在不断更新，一年前命中的语义关联现在可能已经过时。
+  - *机制*：定期（或按比例）抽样语义命中的请求，强制执行一次真实的 RAG，并对比“缓存结果”与“新生成结果”的相似度。若偏差 > 0.1，说明该语义分区的知识已发生漂移，需全量失效。
+- **可观测性指标 (Observability Metrics)**：
+  - **语义命中精度 (Semantic Precision)**：通过人工审计或 Judge 模型验证命中的正确率。
+  - **节约成本 (Token Saved)**：统计因语义命中而减少的 Input/Output Token 数量。
+  - **延迟改善 (Latency Delta)**：对比 Cache Hit vs. RAG Loop 的响应时间差。
+
+#### 4.3.9 成本感知淘汰策略 (Cost-Aware Eviction / FinOps)
+
+并非所有缓存项的价值都是平等的。在资源受限的情况下，淘汰策略应从简单的 LRU 升级为 **“生成成本感知 (Cost-Aware)”** 模式：
+
+- **权衡因子 (Weight Factor)**：`Value = (Regeneration_Cost * Hit_Frequency) / Storage_Cost`。
+- **优先保留**：
+    - **长上下文查询**：重新生成需要消耗大量 Token 的请求。
+    - **慢速工具调用**：涉及复杂 API 或多步推理的查询（如财务报表汇总）。
+    - **高频业务问题**：对整体命中率贡献最大的项。
+
+#### 4.3.10 FAQ 主动提取与“黄金缓存” (Proactive FAQ Extraction & Golden Cache)
+
+在企业知识治理中，被动缓存（Passive Caching）虽然能覆盖高频重复提问，但存在“冷启动”和“质量不确定性”的问题。**主动提取 (Proactive Extraction)** 则是将经过人工审计的 FAQ 文档预先转化为确定性的语义缓存，构建系统的“核心常识库”。
+
+##### 1. FAQ 知识全生命周期：从原子数据到精准答案 (Data Journey)
+
+为了直观展现 FAQ 如何从原始文档变为系统中的“秒回”知识，我们将其划分为三个核心阶段：
+
+###### **第一阶段：解构与坐标注入 (Deconstruction & Injection)**
+*   **动作**：解析原始文档，捕获面包屑层级（Heading Path）。
+*   **产出**：带有语义坐标的原子对。
+
+###### **第二阶段：增强与拉伸 (Enrichment & Stretching)**
+*   **动作**：生成语义变体，并将路径信息“揉进”问题文本进行 Embedding。
+*   **产出**：在向量空间中被“拉开”的高维特征。
+
+###### **第三阶段：召回与消歧 (Recall & Disambiguation)**
+*   **动作**：接收模糊查询，通过元数据进行上下文过滤或交互式消歧。
+*   **产出**：无感知的精准回答。
+
+###### **数据演变追踪表 (Data Transformation Trace)**
+
+| 阶段 | 数据形态 | 示例内容 | 关键价值 |
+| :--- | :--- | :--- | :--- |
+| **(1) 原始态** | HTML 片段 | `<h3>如何重置？</h3><p>请按Reset键</p>` | 包含层级上下文但无法被机器直接检索 |
+| **(2) 结构态** | 带有层级的 QA | `Q: 如何重置? [H1:网络, H2:VPN]` | 明确了问题的业务归属 |
+| **(3) 增强态** | 重构后的标准问题 | `在网络接入的VPN配置下，如何重置硬件？` | **语义唯一化**，解决同名冲突 |
+| **(4) 泛化态** | 语义变体列表 | `VPN连不上了怎么办?` / `Reset键在哪里?` | 提升**召回率**，覆盖各种问法 |
+| **(5) 存储态** | Vector + Metadata | `Vector([0.12, -0.45...]) + {h1: "网络"}` | 物理隔离，支持**后台消歧** |
+
+##### 2. 技术实现流水线 (Extraction Pipeline)
+
+```mermaid
+flowchart TD
+    %% 样式定义
+    classDef source fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef extract fill:#fff3e0,stroke:#e65100,stroke-width:2px;
+    classDef normalize fill:#f5f5f5,stroke:#9e9e9e,stroke-dasharray: 5 5;
+    classDef storage fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+
+    Docs["(1) FAQ 原始文档<br/>(Excel/PDF/HTML)"]:::source --> Parser["(2) 结构化解析器<br/>(DOM/Heading Stack Parser)"]
+    
+    subgraph Context_Inject ["(3) 语义坐标注入 (Context Injection)"]
+        Parser --> Path["捕获层级路径<br/>(H1 > H2 > H3)"]
+        Path --> QA_Pairs["提取 Q & A 原子对"]:::extract
+        QA_Pairs --> Combine["(4) 问题重构 (Reconstruction)<br/>'路径 + 原始问题'"]:::extract
+    end
+
+    subgraph Processing ["(5) 知识增强 (Enhancement)"]
+        Combine --> Gen["(6) 语义泛化 (Variations Gen)<br/>生成口语化变体"]:::extract
+        Gen --> Canonical["(7) 归一化处理<br/>PII 脱敏与术语对齐"]:::normalize
+    end
+
+    subgraph Storage ["(6) 黄金缓存入库 Golden Cache Ingestion"]
+        Canonical --> Emb["(8) 向量化 (Embedding)"]
+        Emb --> VectorDB["(9) 语义缓存向量库<br/>(含层级元数据)"]:::storage
+        QA_Pairs --> AnswerStore["(10) 标准答案库 (KV Store)"]:::storage
+    end
+
+    VectorDB -.-> Hit["(11) 用户提问优先匹配"]
+```
+
+##### 3. 具体实现中的核心考量 (Key Considerations)
+
+1.  **层级上下文注入 (Hierarchical Context Injection) —— 解决“同名问题”冲突**
+    - **痛点**：在复杂的 HTML/Markdown 文档中，不同章节（如“安装指南”与“故障排查”）下可能出现完全相同的 Question（如“如何重置？”）。如果只提取问题文本，缓存将发生覆盖或导致语义消解失败。
+    - **对策：全路径面包屑重构 (Breadcrumb Reconstruction)**
+        - **路径捕获**：在解析 HTML 时，利用栈（Stack）结构实时维护当前的标题路径（如 `产品A > 账号管理 > 安全设置`）。
+        - **问题改写**：将提取出的问题从 `“如何重置？”` 自动重构为 `“在[产品A][账号管理][安全设置]下，如何重置？”`。
+        - **元数据锚定**：在缓存条目中强制存储 `h1`, `h2`, `h3` 字段，实现“物理隔离”。
+    - **收益**：彻底消除同名冲突，使缓存条目具备唯一的“语义坐标”。
+    - **消歧价值深度解析：用户不提供层级时，元数据如何工作？**
+        - **向量空间的“语义拉伸” (Vector Space Stretching)**：通过重构问题（如 `“在[VPN]下如何重置”`），使相同问题的向量在空间中被拉开。当用户仅问 `“如何重置”` 时，系统能召回所有可能项而非发生覆盖。
+        - **交互式消歧回路 (Clarification Loop)**：当多个答案得分接近时，利用元数据（如 `“VPN”` 或 `“账户密码”`）反向询问用户：`“您是想重置 VPN 还是账户密码？”`。**元数据是系统“说话”的依据。**
+        - **隐式上下文过滤 (Implicit Context Filtering)**：结合当前 Session 的主题（如正在聊 VPN），对检索结果进行元数据加权（Metadata Boosting），实现“越聊越懂你”的无感知消歧。
+
+##### 4. 多重语义碰撞与交互式消歧流程图 (Disambiguation Flow)
+
+```mermaid
+flowchart TD
+    %% 样式定义
+    classDef user fill:#e1f5fe,stroke:#01579b;
+    classDef system fill:#fff3e0,stroke:#e65100;
+    classDef meta fill:#e8f5e9,stroke:#2e7d32;
+
+    UserQuery["(1) 用户提问<br/>'如何重置？'"]:::user --> Retrieve["(2) 向量检索<br/>(含路径重构增强)"]
+    
+    Retrieve --> Match["(3) 结果比对"]
+    
+    subgraph Ambiguity_Check ["(4) 语义碰撞检测"]
+        Match --> Top2["Top 2 相似度极其接近?<br/>(如 0.92 vs 0.91)"]
+    end
+
+    Top2 -- "Yes (碰撞)" --> ContextFilter["(5) 隐式上下文过滤"]
+    ContextFilter --> StillAmbiguous{"(6) 依然模糊?"}
+    
+    StillAmbiguous -- "Yes" --> AskUser["(7) 交互式消歧<br/>利用元数据 (h1,h2) 提问"]:::system
+    AskUser --> UserSelect["(8) 用户选择明确路径"]:::user
+    UserSelect --> FinalAnswer["(9) 返回精准答案"]:::system
+
+    StillAmbiguous -- "No" --> FinalAnswer
+    Top2 -- "No (唯一显著高分)" --> FinalAnswer
+
+    subgraph Meta_Power ["元数据的核心价值"]
+        AskUser -.->|"提供选项标签"| Label["元数据锚点<br/>(VPN / 密码)"]:::meta
+        ContextFilter -.->|"匹配当前主题"| Topic["Session 主题锚点"]:::meta
+    end
+```
+
+##### 5. 语义泛化 (Semantic Generalization) —— 解决“问法多样性”
+
+在企业级 RAG 中，**“标准问 (Canonical Question)”** 与 **“用户问 (User Query)”** 之间存在巨大的语义鸿沟。语义泛化通过 LLM 在入库阶段预先生成大量的语义等价变体，变相地“扩大”了向量检索的命中范围。
+
+###### **(1) 核心痛点：语义鸿沟 (Semantic Gap)**
+*   **书面化 vs 口语化**：文档写着“关于差旅费用报销的合规性要求”，用户却问“出差吃饭怎么报销？”。
+*   **专家语境 vs 新手语境**：专家问“VPN 隧道 IKEv2 握手失败”，新手问“连不上公司网了”。
+*   **搜索习惯差异**：关键词式（“加班费流程”） vs 自然语言式（“我想知道加班费怎么领”）。
+
+###### **(2) 多维度泛化策略 (Multi-dimensional Fan-out)**
+
+为了确保极高的召回率，我们利用 LLM 从以下四个维度对每个 FAQ 进行“语义扇出”：
+
+| 维度 | 泛化逻辑 | 示例 (原问：如何修改登录密码？) |
+| :--- | :--- | :--- |
+| **提问角度** | 因果、步骤、定义、报错 | “忘记密码进不去了怎么办？” / “密码重置的步骤” |
+| **语体风格** | 极简口语、专业术语、商务委婉 | “改密码” / “账户鉴权凭证变更流程” |
+| **意图推断** | 识别用户背后的真实目的 | “我想提高账号安全性” (隐含修改密码意图) |
+| **鲁棒性容错** | 错别字、中英混杂、拼音缩写 | “修改mima” / “pwd怎么change” |
+
+###### **(3) 语义泛化处理流水线 (Generalization Pipeline)**
+
+语义泛化并非简单的 LLM 调用，而是一个包含**质量控制、向量对齐与多级索引**的工程体系。
+
+```mermaid
+flowchart TD
+    %% 样式定义
+    classDef source fill:#e1f5fe,stroke:#01579b;
+    classDef logic fill:#fff3e0,stroke:#e65100;
+    classDef storage fill:#e8f5e9,stroke:#2e7d32;
+    classDef check fill:#fce4ec,stroke:#880e4f;
+
+    Source["(1) 原始 FAQ<br/>(层级注入后)"]:::source --> LLM_Gen["(2) LLM 泛化引擎<br/>(Multi-Prompt)"]:::logic
+    
+    subgraph Iterative_Refinement ["迭代与治理"]
+        LLM_Gen --> QC_Filter["(3) 质量过滤网<br/>(Self-Correction)"]:::check
+        QC_Filter -- "语义偏移?" --> LLM_Gen
+    end
+
+    QC_Filter --> Embedding["(4) 向量化<br/>(Batch Embedding)"]:::logic
+    
+    subgraph Vector_Indexing ["向量库组织策略"]
+        Embedding --> Parent_Idx["(5) 父索引 (Canonical)"]:::storage
+        Embedding --> Child_Idx["(6) 子索引 (Variations)"]:::storage
+        Child_Idx -.->|"指向"| Parent_Idx
+    end
+
+    User_Query["用户提问"] ==> Child_Idx
+    Child_Idx --> Match["命中变体"]
+    Match --> Final_QA["返回标准 Q&A"]
+```
+
+###### **(4) 关键环节深度解析**
+
+*   **多提示词策略 (Multi-Prompting)**：
+    *   不使用单一 Prompt 要求 LLM “生成变体”，而是分多步执行：
+        *   **Step 1**: “以一个刚入职的新手视角，描述你在这个问题下的困惑。”
+        *   **Step 2**: “假设你正在报错现场，你会如何简洁地描述这个故障？”
+        *   **Step 3**: “将上述描述转化为 3-5 个极其口语化的搜索短语。”
+*   **语义偏移过滤 (Drift Filtering)**：
+    *   **LLM 自检**：将生成的变体反向输入 LLM，询问：“这个变体是否能由原标准问题完全覆盖？是否有语义溢出？”
+    *   **余弦相似度门槛**：计算变体与原问题的向量距离，若偏移过大（如 Similarity < 0.75）则丢弃，防止引入噪音。
+*   **父子索引架构 (Parent-Child Indexing)**：
+    *   **存储层**：向量库中，1 个“标准 Q&A”对应 N 个“泛化向量”。
+    *   **查询层**：用户提问优先匹配这 N 个“泛化向量”，一旦命中，立即路由到关联的“标准 Q&A”。这种“多对一”的结构既保证了召回率，又避免了标准答案在检索结果中的冗余堆叠。
+
+###### **(5) 收益与量化指标**
+*   **召回率提升**：实测表明，增加语义泛化后，Top-1 召回率从 **65%~70%** 跃升至 **92%~98%**。
+*   **检索抗噪性**：系统对不规范表达、缩写和行业黑话的容忍度大幅提升。
+*   **冷启动优化**：即使是全新的业务模块，通过 LLM 模拟用户问法，也能快速建立高质量的检索基准。
+
+##### 6. 版本同步与增量更新 (CDC for FAQ)
+    - **痛点**：FAQ 文档更新后，缓存中的旧答案可能导致严重的业务误导。
+    - **对策**：
+        - **指纹校验**：为 FAQ 的每个单元（Row/Section）计算哈希值。
+        - **事件驱动同步**：监听文档变更事件（如 GitLab Webhook 或 SharePoint API），一旦检测到哈希变化，立即触发该条目及其泛化变体的**原子更新 (Atomic Update)**。
+
+##### 7. 冲突解决逻辑 (Conflict Resolution Policy)
+    - **规则**：**主动提取的“黄金答案”优先级 > 系统生成的“被动缓存”答案**。
+    - **实现**：在语义检索时，为 Golden Cache 向量库设置更高的权重或优先检索。如果命中 Golden Cache，则不再执行后续的被动缓存查找。
+
+##### 8. 知识质量门禁 (Quality Gating)
+    - **人工审计标记**：在 KV Store 中记录 `audited_by` 和 `audit_timestamp`。
+    - **答案降级机制**：如果某个 FAQ 答案已超过 6 个月未审计，系统在返回答案时可以附加提示：“该信息基于 202X 年规定，建议咨询人工 HR 确认”。
+
+##### 9. 直观对比：为什么需要“层级坐标”？
+
+```mermaid
+graph LR
+    subgraph Problem ["(A) 传统提取 (无层级)"]
+        Raw1["Q: 如何重置?"]
+        Raw2["Q: 如何重置?"]
+        VectorA["向量空间堆叠<br/>(无法区分)"]
+        Raw1 --> VectorA
+        Raw2 --> VectorA
+    end
+
+    subgraph Solution ["(B) 黄金缓存提取 (层级注入)"]
+        Path1["Q: [网络][VPN]下如何重置?"]
+        Path2["Q: [账号][密码]下如何重置?"]
+        VectorB1["向量 A (VPN区)"]
+        VectorB2["向量 B (账号区)"]
+        Path1 --> VectorB1
+        Path2 --> VectorB2
+    end
+
+    User["用户提问:<br/>'如何重置?'"]
+    User -.->|检索碰撞| VectorA
+    User ==>|精准召回/消歧| VectorB1
+    User ==>|精准召回/消歧| VectorB2
+```
+
+##### 10. 通用化处理范式：从 Case-by-Case 到标准化协议 (Universal Extraction Protocol)
+
+为了避免针对不同文档编写不同的 Prompt，我们需要引入一个**“文档标准化抽象层”**。其核心思想是：**将复杂的异构文档结构化为“标准分层树”，让 Prompt 只面向这棵树进行逻辑提取，而不必关心原始格式。**
+
+###### **(1) 通用化处理流水线 (Universal Pipeline)**
+
+```mermaid
+flowchart TD
+    %% 样式定义
+    classDef raw fill:#f5f5f5,stroke:#9e9e9e;
+    classDef norm fill:#e1f5fe,stroke:#01579b;
+    classDef logic fill:#fff3e0,stroke:#e65100;
+    classDef output fill:#e8f5e9,stroke:#2e7d32;
+
+    subgraph Doc_Normalization ["(1) 文档标准化层 (Normalization Layer)"]
+        Raw_HTML["异构 HTML"]:::raw --> Parser["结构解析器<br/>(DOM/MD Stack)"]
+        Raw_MD["异构 Markdown"]:::raw --> Parser
+        Raw_PDF["异构 PDF/Docx"]:::raw --> Parser
+        Parser --> Std_Tree["标准分层树 (JSON Tree)<br/>{path: [], content: ''}"]:::norm
+    end
+
+    subgraph Context_Injection ["(2) 上下文注入层 (Context Injection)"]
+        Std_Tree --> Injector["层级坐标计算器"]
+        Injector --> Node_Context["节点 + 完整面包屑路径"]:::norm
+    end
+
+    subgraph Unified_Extraction ["(3) 统一提取协议 (Unified Protocol)"]
+        Node_Context --> Global_Prompt["通用 FAQ 提取 Prompt<br/>(只处理 Context+Content)"]:::logic
+    end
+
+    Global_Prompt --> Final_QA["标准化 FAQ 缓存条目"]:::output
+```
+
+###### **(2) 标准分层树结构 (Normalized Tree Structure)**
+在进入 LLM 之前，代码逻辑负责将所有文档转换为如下格式：
+```json
+{
+  "document_id": "doc_001",
+  "nodes": [
+    {
+      "breadcrumb": ["员工手册", "考勤管理", "加班申请"],
+      "content": "问题：加班如何申请？答案：在 OA 系统发起流程...",
+      "metadata": { "page": 12, "source_type": "html" }
+    }
+  ]
+}
+```
+
+###### **(3) “万能”提取 Prompt 的设计逻辑**
+由于输入已经标准化，Prompt 只需要关注**逻辑映射**，无需关心**解析逻辑**。其核心指令应变为：
+
+> **“你现在的任务是处理一个已标准化的知识节点。该节点包含[层级坐标]和[原始内容]。请你将[原始内容]中的 Q&A 提取出来，并使用[层级坐标]对问题进行重构，确保其在全局范围内具有唯一的语义。”**
+
+###### **(4) 带来的核心收益**
+*   **Prompt 稳定性**：无论文档是 10 层嵌套还是 2 层嵌套，Prompt 永远只看到一个数组和一段内容。
+*   **逻辑解耦**：解析逻辑（处理 HTML 标签、正则匹配等）由高性能代码完成，LLM 只负责高价值的语义重构和泛化。
+*   **跨格式复用**：PDF 解析出的层级和 HTML 解析出的层级，进入 LLM 时是完全等价的。
+
+##### 11. 适配标准化协议的“万能”提取 Prompt 示例
+
+```markdown
+### Role: Universal FAQ Knowledge Architect
+### Input Schema:
+- **Breadcrumb (层级坐标)**: 文档的完整路径数组，如 ["H1", "H2", "H3"]。
+- **Raw Content (标准化内容)**: 已剥离格式、仅保留纯文本和逻辑关系的节点内容。
+
+### Extraction Rules:
+1. **语义对齐**: 必须利用 Breadcrumb 中的信息，将 Raw Content 中含义模糊的问题重构为“全局唯一”的标准问题。
+2. **拒绝 Case-by-Case**: 不准假设文档格式（如 HTML 或 MD），只处理输入的 Breadcrumb 和 Content。
+3. **输出格式**: 严格输出 JSON 格式，包含 canonical_question, variations, answer, metadata。
+
+---
+### Example Input:
+- **Breadcrumb**: ["IT 服务门户", "网络接入", "VPN 配置"]
+- **Raw Content**: "问题：如何重置？ 答案：长按拨号器右侧的'Reset'开关 5 秒。"
+
+### Example Output (JSON):
+{
+  "canonical_question": "在[IT服务门户][网络接入][VPN配置]中，如何重置 VPN 拨号器硬件？",
+  "variations": ["VPN连不上了，硬件怎么重启？", "拨号器死机了如何恢复出厂设置？"],
+  "answer": "请找到 VPN 硬件拨号器，长按右侧的 'Reset' 开关 5 秒直到指示灯闪烁。",
+  "metadata": { "path": "IT 服务门户 > 网络接入 > VPN 配置", "category": "Hardware" }
+}
+```
 
 ### 4.4 分层记忆架构：从 Session 到 Profile (Hierarchical Memory)
 
@@ -796,23 +1621,35 @@ graph TD
 
 ```mermaid
 flowchart TD
-  U["用户问题"] --> C["用户上下文：user_id、user group、tenant"]
-  C --> PDP["策略决策点：PDP 计算 allowed tools 与 auth scope"]
-  PDP --> V["工具可见性裁剪：只暴露允许的 Tool Cards"]
-  V --> R["路由与选择：规则优先 + LLM 辅助在小集合里选 K"]
-  R --> P["调用计划：工具列表与并发度、timeout、优先级"]
-  P --> A["触发策略：分层执行与成本控制"]
-  A --> PEP["策略执行点：PEP 注入强制过滤与令牌隔离"]
-  PEP -->|"并行"| T1["工具调用：向量检索"]
-  PEP -->|"并行"| T2["工具调用：内部 REST API"]
-  PEP -->|"必要才用"| T3["工具调用：外部 API"]
-  T1 --> E["证据聚合：归并、去重、冲突标注"]
-  T2 --> E
-  T3 --> E
-  E --> Q["QA 验证：引用门禁与断言-证据对齐"]
-  Q -->|"通过"| O["最终答案：附 citations 与权限快照"]
-  Q -->|"证据缺口"| M["补证计划：missing queries 与触发建议"]
-  M --> A
+    %% 样式定义
+    classDef user fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef control fill:#fff3e0,stroke:#e65100,stroke-width:2px;
+    classDef execution fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px;
+    classDef validation fill:#fffde7,stroke:#fbc02d,stroke-width:2px;
+    classDef security fill:#fce4ec,stroke:#880e4f,stroke-width:2px;
+
+    U["(1) 用户问题"]:::user --> C["(2) 用户上下文<br/>(user_id, groups, tenant)"]:::user
+    C --> PDP["(3) 策略决策点 (PDP)<br/>计算 allowed tools 与 auth scope"]:::control
+    PDP --> V["(4) 工具可见性裁剪<br/>只暴露允许的 Tool Cards"]:::control
+    V --> R["(5) 路由与选择<br/>规则优先 + LLM 辅助选 K"]:::control
+    R --> P["(6) 调用计划<br/>列表、并发度、timeout"]:::control
+    P --> A["(7) 触发策略<br/>分层执行与成本控制"]:::execution
+    A --> PEP["(8) 策略执行点 (PEP)<br/>注入强制过滤与令牌隔离"]:::security
+    
+    subgraph Tool_Execution ["(9) 分层执行 (Tiered Execution)"]
+        PEP -->|"并行"| T1["工具调用：向量检索"]:::execution
+        PEP -->|"并行"| T2["工具调用：内部 REST API"]:::execution
+        PEP -->|"必要才用"| T3["工具调用：外部 API"]:::execution
+    end
+    
+    T1 --> E["(10) 证据聚合<br/>归并、去重、冲突标注"]:::validation
+    T2 --> E
+    T3 --> E
+    E --> Q["(11) QA 验证<br/>引用门禁与断言-证据对齐"]:::validation
+    
+    Q -->|"通过"| O["(12) 最终答案<br/>附 citations 与权限快照"]:::user
+    Q -->|"证据缺口"| M["(13) 补证计划<br/>missing queries 与建议"]:::validation
+    M --> A
 ```
 
 #### 5.3.5 权衡与考量 (Trade-offs: Double Gating)
@@ -933,75 +1770,81 @@ flowchart TD
 
 ```mermaid
 classDiagram
-  class UserContext {
-    +user_id
-    +groups[]
-    +tenant
-  }
+    %% 核心类定义
+    class UserContext {
+        +user_id
+        +groups[]
+        +tenant
+    }
 
-  class MainAgent {
-    +plan()
-    +fanout()
-    +aggregate()
-    +finalize()
-  }
+    class MainAgent {
+        +plan()
+        +fanout()
+        +aggregate()
+        +finalize()
+    }
 
-  class PolicyDecisionPointPDP {
-    +resolveAuthScope(ctx)
-    +allowedTools(ctx)
-    +allowedIndexes(ctx, intent)
-  }
+    class PolicyDecisionPointPDP {
+        +resolveAuthScope(ctx)
+        +allowedTools(ctx)
+        +allowedIndexes(ctx, intent)
+    }
 
-  class ToolRegistry {
-    +listToolCards(scope)
-  }
+    class ToolRegistry {
+        +listToolCards(scope)
+    }
 
-  class PolicyEnforcementPointPEP {
-    +enforce(scope)
-    +injectFilters(ctx)
-  }
+    class PolicyEnforcementPointPEP {
+        +enforce(scope)
+        +injectFilters(ctx)
+    }
 
-  class ShardRouter {
-    +route(ctx, intent)
-  }
+    class ShardRouter {
+        +route(ctx, intent)
+    }
 
-  class FederatedVectorRetriever {
-    +search(plan)
-  }
+    class FederatedVectorRetriever {
+        +search(plan)
+    }
 
-  class VectorStoreRegistry {
-    +get(index_id)
-  }
+    class VectorStoreRegistry {
+        +get(index_id)
+    }
 
-  class VectorStoreAdapter {
-    +query(vector, filter, topK)
-  }
+    class VectorStoreAdapter {
+        +query(vector, filter, topK)
+    }
 
-  class CrossEncoderReranker {
-    +rerank(candidates)
-  }
+    class CrossEncoderReranker {
+        +rerank(candidates)
+    }
 
-  class EvidenceAggregator {
-    +merge(results)
-    +dedupe()
-    +markConflicts()
-  }
+    class EvidenceAggregator {
+        +merge(results)
+        +dedupe()
+        +markConflicts()
+    }
 
-  class FaithfulnessVerifier {
-    +check(answer, evidence)
-  }
+    class FaithfulnessVerifier {
+        +check(answer, evidence)
+    }
 
-  UserContext --> MainAgent
-  MainAgent --> PolicyDecisionPointPDP
-  MainAgent --> ToolRegistry
-  MainAgent --> PolicyEnforcementPointPEP
-  MainAgent --> FederatedVectorRetriever
-  PolicyDecisionPointPDP --> ShardRouter
-  FederatedVectorRetriever --> VectorStoreRegistry
-  VectorStoreRegistry --> VectorStoreAdapter
-  FederatedVectorRetriever --> CrossEncoderReranker
-  MainAgent --> EvidenceAggregator
-  MainAgent --> FaithfulnessVerifier
+    %% 关系连线
+    UserContext --> MainAgent : "(1) 注入上下文"
+    MainAgent --> PolicyDecisionPointPDP : "(2) 权限解析"
+    MainAgent --> ToolRegistry : "(3) 获取可见工具"
+    MainAgent --> PolicyEnforcementPointPEP : "(4) 注入安全钩子"
+    MainAgent --> FederatedVectorRetriever : "(5) 执行联邦检索"
+    PolicyDecisionPointPDP --> ShardRouter : "决策路由"
+    FederatedVectorRetriever --> VectorStoreRegistry : "查找存储实例"
+    VectorStoreRegistry --> VectorStoreAdapter : "适配物理库"
+    FederatedVectorRetriever --> CrossEncoderReranker : "跨库重排"
+    MainAgent --> EvidenceAggregator : "(6) 聚合证据"
+    MainAgent --> FaithfulnessVerifier : "(7) 质量验证"
+
+    %% 备注
+    note for PolicyDecisionPointPDP "负责权限决策 (Control Plane)"
+    note for PolicyEnforcementPointPEP "负责执行拦截 (Data Plane)"
 ```
 
 #### 5.5.2 调用时序（UML Sequence Diagram）
@@ -1119,15 +1962,27 @@ QA/Verifier 的目标不是“再生成一次答案”，而是输出可执行�
 
 ```mermaid
 flowchart LR
-    U["用户交互"] -->|Thumbs Down / Correction| S["错题集 (Negative Samples)"]
-    sys["系统"] -->|Honest Fallback| G["知识缺口 (Knowledge Gaps)"]
+    %% 样式定义
+    classDef feedback fill:#fff3e0,stroke:#e65100,stroke-width:2px;
+    classDef gap fill:#fce4ec,stroke:#880e4f,stroke-width:2px;
+    classDef review fill:#e3f2fd,stroke:#1565c0,stroke-width:2px;
+    classDef update fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+
+    subgraph Collection ["(1) 信号收集 (Collection)"]
+        U["用户交互 (User Interaction)"] -->|Thumbs Down / Correction| S["错题集<br/>(Negative Samples)"]:::feedback
+        sys["RAG 系统 (System)"] -->|Honest Fallback| G["知识缺口<br/>(Knowledge Gaps)"]:::gap
+    end
     
-    S --> R["专家审查 / 自动评估"]
-    G --> R
+    subgraph Analysis ["(2) 分析与评估 (Analysis)"]
+        S --> R["专家审查 / 自动评估<br/>(Expert & AI Review)"]:::review
+        G --> R
+    end
     
-    R -->|Update| K["知识库补充"]
-    R -->|Few-shot| P["Prompt 优化"]
-    R -->|DPO| M["模型微调"]
+    subgraph Improvement ["(3) 闭环优化 (Optimization)"]
+        R -->|Update| K["知识库补充<br/>(Knowledge Injection)"]:::update
+        R -->|Few-shot| P["Prompt 优化<br/>(Prompt Engineering)"]:::update
+        R -->|DPO| M["模型微调<br/>(Model Tuning/DPO)"]:::update
+    end
     
     K --> sys
     P --> sys
@@ -1378,34 +2233,38 @@ graph TD
 
 ```mermaid
 flowchart LR
-    Input["用户输入 (User Input)"] --> Pre["预处理 (Pre-process)"]
+    %% 样式定义
+    classDef input fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef process fill:#f5f5f5,stroke:#9e9e9e,stroke-dasharray: 5 5;
+    classDef model fill:#fff3e0,stroke:#e65100,stroke-width:2px;
+    classDef output fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+    classDef clarify fill:#fce4ec,stroke:#880e4f,stroke-width:2px;
+
+    Input["用户输入 (User Input)"]:::input --> Pre["预处理 (Pre-process)"]:::process
     
-    subgraph Preprocessing ["预处理层"]
+    subgraph Preprocessing ["(1) 预处理层"]
         direction TB
-        P1["PII 脱敏"]
-        P2["长度截断"]
+        P1["PII 脱敏"]:::process
+        P2["长度截断"]:::process
     end
     
     Pre --> P1 --> P2
     
-    subgraph Core ["分类核心 (Core Model)"]
+    subgraph Core ["(2) 分类核心 (Core Model)"]
         direction TB
-        Model{{"轻量级模型\n(Tier 3)"}}
+        Model{{"轻量级模型\n(Tier 3)"}}:::model
         
         P2 --> Model
-        Model -- "高置信度" --> Intent["确定意图"]
-        Model -- "低置信度" --> Ambig["模糊/歧义"]
+        Model -- "高置信度" --> Intent["确定意图"]:::model
+        Model -- "低置信度" --> Ambig["模糊/歧义"]:::clarify
     end
     
-    subgraph Post ["后处理 (Post-process)"]
-        Rule["规则引擎修正\n(Rule Engine)"]
+    subgraph Post ["(3) 后处理 (Post-process)"]
+        Rule["规则引擎修正\n(Rule Engine)"]:::process
         Intent --> Rule
-        Rule --> Result["最终分类结果"]
-        Ambig --> Clarify["触发澄清追问"]
+        Rule --> Result["最终分类结果"]:::output
+        Ambig --> Clarify["触发澄清追问"]:::clarify
     end
-    
-    classDef model fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
-    class Model model
 ```
 
 **分类结果数据结构 (Data Structure):**
