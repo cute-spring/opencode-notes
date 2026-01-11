@@ -1,118 +1,30 @@
+# FAQ 主动提取与“黄金缓存” (Proactive FAQ Extraction & Golden Cache)
 
-
-# 📖 文档导航 (Document Navigation)
-
-> **本可视化文档基于架构师教授 `/prof` 的深度分析生成，并由 `vizdoc` 进行结构化与图表实现。**
-
-- [📖 文档导航 (Document Navigation)](#-文档导航-document-navigation)
-      - [4.3.10 FAQ 主动提取与“黄金缓存” (Proactive FAQ Extraction \& Golden Cache)](#4310-faq-主动提取与黄金缓存-proactive-faq-extraction--golden-cache)
-        - [4.3.10.1 FAQ 知识全生命周期：从原子数据到精准答案 (Data Journey)](#43101-faq-知识全生命周期从原子数据到精准答案-data-journey)
-          - [**(1) 解构与坐标注入 (Deconstruction \& Injection)**](#1-解构与坐标注入-deconstruction--injection)
-          - [**(2) 增强与拉伸 (Enrichment \& Stretching)**](#2-增强与拉伸-enrichment--stretching)
-          - [**(3) 召回与消歧 (Recall \& Disambiguation)**](#3-召回与消歧-recall--disambiguation)
-          - [**(4) 数据演变追踪表 (Data Transformation Trace)**](#4-数据演变追踪表-data-transformation-trace)
-        - [4.3.10.2 技术实现流水线 (Extraction Pipeline)](#43102-技术实现流水线-extraction-pipeline)
-        - [4.3.10.2.1 核心技术深度解析](#431021-核心技术深度解析)
-          - [步骤8：语义变体生成 (Semantic Variations Generation)](#步骤8语义变体生成-semantic-variations-generation)
-          - [步骤9：语义漂移检测 (Semantic Drift Validation)](#步骤9语义漂移检测-semantic-drift-validation)
-          - [质量控制反馈循环 (Quality Control Feedback Loop)](#质量控制反馈循环-quality-control-feedback-loop)
-          - [设计原则与最佳实践](#设计原则与最佳实践)
-        - [4.3.10.3 系统架构总览 (Architecture Overview)](#43103-系统架构总览-architecture-overview)
-          - [架构设计原则](#架构设计原则)
-        - [4.3.10.6 Agent 检索策略：确定性优先网关 (Agentic Deterministic Gateway)](#43106-agent-检索策略确定性优先网关-agentic-deterministic-gateway)
-          - [**(1) 缓存优先策略 (Cache-First Strategy)**](#1-缓存优先策略-cache-first-strategy)
-          - [**(2) 为什么这是 Agentic 的？**](#2-为什么这是-agentic-的)
-        - [4.3.10.7 具体实现中的核心考量 (Key Considerations)](#43107-具体实现中的核心考量-key-considerations)
-          - [**(1) 层级上下文注入 (Hierarchical Context Injection) —— 解决“同名问题”冲突**](#1-层级上下文注入-hierarchical-context-injection--解决同名问题冲突)
-          - [**(2) 多语言支持机制 (Multilingual Support Mechanism)**](#2-多语言支持机制-multilingual-support-mechanism)
-          - [**(3) 消歧价值深度解析：用户不提供层级时，元数据如何工作？**](#3-消歧价值深度解析用户不提供层级时元数据如何工作)
-        - [4.3.10.5 多重语义碰撞与交互式消歧流程图 (Disambiguation Flow)](#43105-多重语义碰撞与交互式消歧流程图-disambiguation-flow)
-        - [4.3.10.6 语义泛化 (Semantic Generalization) —— 解决“问法多样性”](#43106-语义泛化-semantic-generalization--解决问法多样性)
-          - [**(1) 核心痛点：语义鸿沟 (Semantic Gap)**](#1-核心痛点语义鸿沟-semantic-gap)
-          - [**(2) 多维度泛化策略 (Multi-dimensional Fan-out)**](#2-多维度泛化策略-multi-dimensional-fan-out)
-          - [**(3) 语义泛化处理流水线 (Generalization Pipeline)**](#3-语义泛化处理流水线-generalization-pipeline)
-          - [**(4) 简化实现伪代码 (Simplified Implementation Pseudo-code)**](#4-简化实现伪代码-simplified-implementation-pseudo-code)
-          - [**(5) 调用示例 (Execution Samples)**](#5-调用示例-execution-samples)
-          - [**(6) 关键环节深度解析**](#6-关键环节深度解析)
-          - [**(5) 收益与量化指标**](#5-收益与量化指标)
-        - [4.3.10.7 版本同步与增量更新 (CDC for FAQ)](#43107-版本同步与增量更新-cdc-for-faq)
-        - [4.3.10.8 角色驱动的差异化支持框架 (Role-Based Differentiation Framework)](#43108-角色驱动的差异化支持框架-role-based-differentiation-framework)
-          - [**(1) 角色画像与需求分析 (Role Personas \& Requirements)**](#1-角色画像与需求分析-role-personas--requirements)
-          - [**(2) 策略工厂的角色化配置 (Role-Aware Strategy Configuration)**](#2-策略工厂的角色化配置-role-aware-strategy-configuration)
-          - [**(3) 检索阶段的角色化权重 (Role-Based Retrieval Boosting)**](#3-检索阶段的角色化权重-role-based-retrieval-boosting)
-          - [**(4) 答案生成的角色化适配 (Role-Specific Answer Adaptation)**](#4-答案生成的角色化适配-role-specific-answer-adaptation)
-          - [**(5) 架构实现：角色上下文拦截器 (Role Context Interceptor)**](#5-架构实现角色上下文拦截器-role-context-interceptor)
-          - [**(6) 实施路线图建议 (Implementation Roadmap)**](#6-实施路线图建议-implementation-roadmap)
-          - [**(7) 治理与监控指标 (Governance \& Monitoring)**](#7-治理与监控指标-governance--monitoring)
-        - [4.3.10.9 主动式、多维度语义泛化深度分析 (Proactive Multi-Dimensional Semantic Generalization)](#43109-主动式多维度语义泛化深度分析-proactive-multi-dimensional-semantic-generalization)
-          - [**(1) 核心驱动三要素 (The Three Pillars)**](#1-核心驱动三要素-the-three-pillars)
-          - [**(2) 多维度扇出策略 (Multi-Dimensional Fan-out, MDF)**](#2-多维度扇出策略-multi-dimensional-fan-out-mdf)
-          - [**(3) 语法结构变换模式 (Syntactic Structure Transformation, SST)**](#3-语法结构变换模式-syntactic-structure-transformation-sst)
-          - [**(4) 动态策略工厂 (Dynamic Strategy Factory)**](#4-动态策略工厂-dynamic-strategy-factory)
-          - [**(5) 预生成流水线 (Proactive Generation Pipeline)**](#5-预生成流水线-proactive-generation-pipeline)
-          - [**(6) 设计深度：为什么需要"主动"？**](#6-设计深度为什么需要主动)
-        - [4.3.10.10 知识质量门禁 (Quality Gating)](#431010-知识质量门禁-quality-gating)
-        - [4.3.10.11 直观对比：为什么需要“层级坐标”？](#431011-直观对比为什么需要层级坐标)
-        - [4.3.10.12 系统工业级稳健性：三大闭环机制 (System Robustness Closing-Loop Mechanisms)](#431012-系统工业级稳健性三大闭环机制-system-robustness-closing-loop-mechanisms)
-          - [**(1) 语义冲突检测与消歧 (Conflict Disambiguation)**](#1-语义冲突检测与消歧-conflict-disambiguation)
-          - [**(2) 知识指纹与增量更新 (Semantic Fingerprint \& Incremental Update)**](#2-知识指纹与增量更新-semantic-fingerprint--incremental-update)
-          - [**(3) 基于流量的自我进化 (Traffic-Driven Self-Evolution)**](#3-基于流量的自我进化-traffic-driven-self-evolution)
-        - [4.3.10.13 文档标准化抽象层 (Document Standardization Abstraction Layer)](#431013-文档标准化抽象层-document-standardization-abstraction-layer)
-          - [**(1) 通用化处理流水线 (Universal Pipeline)**](#1-通用化处理流水线-universal-pipeline)
-          - [**(2) 标准分层树结构 (Normalized Tree Structure)**](#2-标准分层树结构-normalized-tree-structure)
-          - [**(3) “万能”提取 Prompt 的设计逻辑**](#3-万能提取-prompt-的设计逻辑)
-          - [**(4) 带来的核心收益**](#4-带来的核心收益)
-        - [4.3.10.12 适配标准化协议的“万能”提取 Prompt 示例](#431012-适配标准化协议的万能提取-prompt-示例)
-        - [4.3.10.13 安全与合规 (Security \& Compliance)](#431013-安全与合规-security--compliance)
-        - [4.3.10.14 指标与监控 (Metrics \& Monitoring)](#431014-指标与监控-metrics--monitoring)
-        - [4.3.10.15 多语言适配 (Multilingual Support)](#431015-多语言适配-multilingual-support)
-        - [4.3.10.16 黄金缓存条目数据模型 (Schema)](#431016-黄金缓存条目数据模型-schema)
-        - [4.3.10.17 运行策略与成本优化 (Ops \& Cost)](#431017-运行策略与成本优化-ops--cost)
-        - [4.3.10.18 人机协同与反馈回路 (Human-in-the-loop)](#431018-人机协同与反馈回路-human-in-the-loop)
-        - [4.3.10.19 与企业缓存分层的协同 (Integration with Caching Layers)](#431019-与企业缓存分层的协同-integration-with-caching-layers)
-        - [4.3.10.20 向量库存储结构与查询 (Vector DB Storage \& Query)](#431020-向量库存储结构与查询-vector-db-storage--query)
-        - [4.3.10.21 字段释义与设计价值 (Field Semantics \& Value)](#431021-字段释义与设计价值-field-semantics--value)
-          - [图示：存储架构总览](#图示存储架构总览)
-          - [图示：查询与路由时序](#图示查询与路由时序)
-        - [4.3.10.22 变体向量生成伪代码 (Embedding Generation for Variations)](#431022-变体向量生成伪代码-embedding-generation-for-variations)
-          - [设计原理与关键决策](#设计原理与关键决策)
-          - [实际应用示例](#实际应用示例)
-          - [性能优化建议](#性能优化建议)
-        - [4.3.10.23 部署与运维指南 (Deployment \& Operations)](#431023-部署与运维指南-deployment--operations)
-          - [环境要求](#环境要求)
-          - [部署步骤](#部署步骤)
-          - [监控与告警](#监控与告警)
-        - [4.3.10.24 核心术语表 (Glossary)](#431024-核心术语表-glossary)
-        - [4.3.10.25 设计原则总结 (Design Principles)](#431025-设计原则总结-design-principles)
-          - [核心设计理念](#核心设计理念)
-          - [技术选型考量](#技术选型考量)
-          - [成功指标 (Success Metrics)](#成功指标-success-metrics)
-          - [演进路线 (Evolution Roadmap)](#演进路线-evolution-roadmap)
-        - [4.3.10.26 教育价值总结 (Educational Value)](#431026-教育价值总结-educational-value)
-
----
-
-#### 4.3.10 FAQ 主动提取与“黄金缓存” (Proactive FAQ Extraction & Golden Cache)
+> **文档优化说明**：
+> - **结构重组**：将原有的嵌套序号统一为一级/二级标题结构，确保作为独立技术白皮书的阅读连贯性。
+> - **层级规范**：修正了 Markdown 标题等级（H1->H3），解决了原文档中 H3 与 H5 并列的层级混乱问题。
+> - **视觉增强**：优化了 Mermaid 流程图的节点描述，确保符合渲染防御性准则（双引号包裹、HTML 换行）。
+> - **逻辑对齐**：将“核心技术解析”归入流水线章节，使技术实现与架构总览逻辑更清晰。
 
 在企业知识治理中，被动缓存（Passive Caching）虽然能覆盖高频重复提问，但存在“冷启动”和“质量不确定性”的问题。**主动提取 (Proactive Extraction)** 则是将经过人工审计的 FAQ 文档预先转化为确定性的语义缓存，构建系统的“核心常识库”。
 
-##### 4.3.10.1 FAQ 知识全生命周期：从原子数据到精准答案 (Data Journey)
+## 1 FAQ 知识全生命周期：从原子数据到精准答案 (Data Journey)
 
 为了直观展现 FAQ 如何从原始文档变为系统中的“秒回”知识，我们将其划分为三个核心阶段：
 
-###### **(1) 解构与坐标注入 (Deconstruction & Injection)**
+### (1) 解构与坐标注入 (Deconstruction & Injection)
 - **动作**：解析原始文档，捕获面包屑层级（Heading Path）。
 - **产出**：带有语义坐标的原子对。
 
-###### **(2) 增强与拉伸 (Enrichment & Stretching)**
+### (2) 增强与拉伸 (Enrichment & Stretching)
 - **动作**：生成语义变体，并将路径信息“揉进”问题文本进行 Embedding。
 - **产出**：在向量空间中被“拉开”的高维特征。
 
-###### **(3) 召回与消歧 (Recall & Disambiguation)**
+### (3) 召回与消歧 (Recall & Disambiguation)
 - **动作**：接收模糊查询，通过元数据进行上下文过滤或交互式消歧。
 - **产出**：无感知的精准回答。
 
-###### **(4) 数据演变追踪表 (Data Transformation Trace)**
+### (4) 数据演变追踪表 (Data Transformation Trace)
 
 | 阶段 | 数据形态 | 示例内容 | 关键价值 |
 | :--- | :--- | :--- | :--- |
@@ -122,7 +34,7 @@
 | **(4) 泛化态** | 语义变体列表 | `VPN连不上了怎么办?` / `Reset键在哪里?` | 提升**召回率**，覆盖各种问法 |
 | **(5) 存储态** | Vector + Metadata | `Vector([0.12, -0.45...]) + {h1: "网络"}` | 物理隔离，支持**后台消歧** |
 
-##### 4.3.10.2 技术实现流水线 (Extraction Pipeline)
+## 2 技术实现流水线 (Extraction Pipeline)
 
 ```mermaid
 flowchart TD
@@ -165,12 +77,11 @@ flowchart TD
     %% 监控反馈环
     Discard -.->|"质量指标"| Monitor["(15) 语义漂移监控"]:::normalize
     Monitor -.->|"调整阈值"| Validate
-
 ```
 
-##### 4.3.10.2.1 核心技术深度解析
+### (1) 核心技术深度解析
 
-###### 步骤8：语义变体生成 (Semantic Variations Generation)
+### (8) 语义变体生成 (Semantic Variations Generation)
 
 **设计目标与挑战**：
 - **用户多样性覆盖**：用户会用不同方式表达相同问题。
@@ -304,7 +215,7 @@ flowchart TD
 6. **语义对齐与入库 (Alignment & Ingestion)**
    生成的变体需经过[步骤9：语义漂移检测](#步骤9语义漂移检测-semantic-drift-validation)后，方可进入 `gc_variations` 向量库。
 
-###### 步骤9：语义漂移检测 (Semantic Drift Validation)
+### (9) 语义漂移检测 (Semantic Drift Validation)
 
 **核心机制**：通过向量相似度量化检测变体与原问题的语义一致性
 
@@ -327,7 +238,7 @@ semantic_validation:
 - **上下文丢失**：忽略业务限定条件 → **拒绝**
 - **合理变体**：同义表达，保持核心含义 → **通过**
 
-###### 质量控制反馈循环 (Quality Control Feedback Loop)
+### (2) 质量控制反馈循环 (Quality Control Feedback Loop)
 
 **监控指标体系**：
 ```typescript
@@ -385,7 +296,7 @@ def adaptive_threshold_adjustment(
     return new_threshold
 ```
 
-###### 设计原则与最佳实践
+### (3) 设计原则与最佳实践
 
 1. **质量优先原则**：宁可少一些变体，也要保证每个变体的准确性
 2. **可解释性设计**：每个决策都有明确的相似度分数和通过理由
@@ -398,7 +309,7 @@ def adaptive_threshold_adjustment(
 - ✅ 用户问题覆盖度 > 90%
 - ✅ 回答准确率 > 99%
 
-##### 4.3.10.3 系统架构总览 (Architecture Overview)
+## 3 系统架构总览 (Architecture Overview)
 
 ```mermaid
 flowchart TB
@@ -491,7 +402,7 @@ flowchart TB
 
 ```
 
-###### 架构设计原则
+### (1) 架构设计原则
 
 1. **分层解耦**：各层职责清晰，便于独立扩展和维护
 2. **数据驱动**：基于向量相似度和元数据过滤实现精准召回
@@ -499,11 +410,11 @@ flowchart TB
 4. **企业级治理**：完整的RBAC、审计日志和合规性支持
 5. **可观测性**：全面的指标监控和告警体系
 
-##### 4.3.10.6 Agent 检索策略：确定性优先网关 (Agentic Deterministic Gateway)
+## 4 Agent 检索策略：确定性优先网关 (Agentic Deterministic Gateway)
 
 在 Agentic RAG 系统中，Agent 不应盲目执行全量检索。通过“黄金缓存”，我们可以构建一个**分层检索网关 (Tiered Retrieval Gateway)**，显著降低延迟并提升回答的权威性。
 
-###### **(1) 缓存优先策略 (Cache-First Strategy)**
+### (1) 缓存优先策略 (Cache-First Strategy)
 Agent 在接收到用户提问时，遵循以下决策逻辑：
 
 ```mermaid
@@ -526,14 +437,14 @@ flowchart TD
     Disambiguation --> FinalAnswer
 ```
 
-###### **(2) 为什么这是 Agentic 的？**
+### (2) 为什么这是 Agentic 的？
 - **成本感知 (Cost Awareness)**：黄金缓存的检索成本远低于 LLM 生成。Agent 优先选择低成本、高确定性的路径。
 - **工具化检索 (Retrieval as a Tool)**：Agent 将“黄金缓存”视为一个具备 `high-precision` 特性的专业工具，而不是一个黑盒数据源。
 - **主动引导 (Proactive Guidance)**：当命中缓存但存在歧义时，Agent 利用缓存中的元数据主动发起追问，而不是尝试猜测用户意图。
 
-##### 4.3.10.7 具体实现中的核心考量 (Key Considerations)
+## 5 具体实现中的核心考量 (Key Considerations)
 
-###### **(1) 层级上下文注入 (Hierarchical Context Injection) —— 解决“同名问题”冲突**
+### (1) 层级上下文注入 (Hierarchical Context Injection) —— 解决“同名问题”冲突
 - **痛点**：在复杂的 HTML/Markdown 文档中，不同章节（如“安装指南”与“故障排查”）下可能出现完全相同的 Question（如“如何重置？”）。如果只提取问题文本，缓存将发生覆盖或导致语义消解失败。
 - **对策：全路径面包屑重构 (Breadcrumb Reconstruction)**
     - **路径捕获**：在解析 HTML 时，利用栈（Stack）结构实时维护当前的标题路径（如 `产品A > 账号管理 > 安全设置`）。
@@ -541,7 +452,7 @@ flowchart TD
     - **元数据锚定**：在缓存条目中强制存储 `h1`, `h2`, `h3` 字段，实现“物理隔离”。
 - **收益**：彻底消除同名冲突，使缓存条目具备唯一的“语义坐标”。
 
-###### **(2) 多语言支持机制 (Multilingual Support Mechanism)**
+### (2) 多语言支持机制 (Multilingual Support Mechanism)
 - **痛点**：跨国企业员工使用不同语言提问，简单的机器翻译可能丢失专业术语的准确性，且不同语言的问法习惯差异巨大。
 - **对策：多语言泛化与跨语言对齐 (Multilingual Generalization & Alignment)**
     - **双轨制生成**：标准问提取后，同步触发“翻译+本地化泛化”流程。例如，中文标准问“如何重置 VPN？”同步生成英文变体“How to reset VPN dialer?”。
@@ -551,12 +462,12 @@ flowchart TD
     - **自动检测路由**：识别用户提问语言，优先在对应 `lang` 的变体中搜索，并辅以跨语言检索作为兜底。
     - **标准答案多语言映射**：`gc_canonical` 存储标准答的翻译映射表，确保无论用哪种语言提问，都能返回对应语言的高质量答案。
 
-###### **(3) 消歧价值深度解析：用户不提供层级时，元数据如何工作？**
+### (3) 消歧价值深度解析：用户不提供层级时，元数据如何工作？
 - **向量空间的“语义拉伸” (Vector Space Stretching)**：通过重构问题（如 `“在[VPN]下如何重置”`），使相同问题的向量在空间中被拉开。当用户仅问 `“如何重置”` 时，系统能召回所有可能项而非发生覆盖。
 - **交互式消歧回路 (Clarification Loop)**：当多个答案得分接近时，利用元数据（如 `“VPN”` 或 `“账户密码”`）反向询问用户：`“您是想重置 VPN 还是账户密码？”`。**元数据是系统“说话”的依据。**
 - **隐式上下文过滤 (Implicit Context Filtering)**：结合当前 Session 的主题（如正在聊 VPN），对检索结果进行元数据加权（Metadata Boosting），实现“越聊越懂你”的无感知消歧。
 
-##### 4.3.10.5 多重语义碰撞与交互式消歧流程图 (Disambiguation Flow)
+## 6 多重语义碰撞与交互式消歧流程图 (Disambiguation Flow)
 
 ```mermaid
 flowchart TD
@@ -589,16 +500,16 @@ flowchart TD
     end
 ```
 
-##### 4.3.10.6 语义泛化 (Semantic Generalization) —— 解决“问法多样性”
+## 7 语义泛化 (Semantic Generalization) —— 解决“问法多样性”
 
 在企业级 RAG 中，**“标准问 (Canonical Question)”** 与 **“用户问 (User Query)”** 之间存在巨大的语义鸿沟。语义泛化通过 LLM 在入库阶段预先生成大量的语义等价变体，变相地“扩大”了向量检索的命中范围。
 
-###### **(1) 核心痛点：语义鸿沟 (Semantic Gap)**
+### (1) 核心痛点：语义鸿沟 (Semantic Gap)
 - **书面化 vs 口语化**：文档写着“关于差旅费用报销的合规性要求”，用户却问“出差吃饭怎么报销？”。
 - **专家语境 vs 新手语境**：专家问“VPN 隧道 IKEv2 握手失败”，新手问“连不上公司网了”。
 - **搜索习惯差异**：关键词式（“加班费流程”） vs 自然语言式（“我想知道加班费怎么领”）。
 
-###### **(2) 多维度泛化策略 (Multi-dimensional Fan-out)**
+### (2) 多维度泛化策略 (Multi-dimensional Fan-out)
 
 为了确保极高的召回率，我们利用 LLM 从以下四个维度对每个 FAQ 进行“语义扇出”：
 
@@ -609,7 +520,7 @@ flowchart TD
 | **意图推断** | 识别用户背后的真实目的 | “我想提高账号安全性” (隐含修改密码意图) |
 | **鲁棒性容错** | 错别字、中英混杂、拼音缩写 | “修改mima” / “pwd怎么change” |
 
-###### **(3) 语义泛化处理流水线 (Generalization Pipeline)**
+### (3) 语义泛化处理流水线 (Generalization Pipeline)
 
 语义泛化并非简单的 LLM 调用，而是一个包含**质量控制、向量对齐与多级索引**的工程体系。
 
@@ -641,7 +552,7 @@ flowchart TD
     Match --> Final_QA["返回标准 Q&A"]
 ```
 
-###### **(4) 简化实现伪代码 (Simplified Implementation Pseudo-code)**
+### (4) 简化实现伪代码 (Simplified Implementation Pseudo-code)
 
 为了便于工程落地，我们将复杂的泛化流水线简化为以下核心逻辑：
 
@@ -676,7 +587,7 @@ async function semanticGeneralization(canonicalQA: FAQItem): Promise<string[]> {
 }
 ```
 
-###### **(5) 调用示例 (Execution Samples)**
+### (5) 调用示例 (Execution Samples)
 
 通过以下不同业务领域的示例，可以直观看到语义泛化如何消除“知识诅咒”：
 
@@ -700,7 +611,7 @@ async function semanticGeneralization(canonicalQA: FAQItem): Promise<string[]> {
   - `[Colloquial]`: "年假过期了会发工资补偿吗？"
   - `[RoleBased]`: "作为部门经理，如何指导员工申请年假补偿？"
 
-###### **(6) 关键环节深度解析**
+### (6) 关键环节深度解析
 
 - **多提示词策略 (Multi-Prompting)**：
     - 不使用单一 Prompt 要求 LLM “生成变体”，而是分多步执行：
@@ -714,22 +625,25 @@ async function semanticGeneralization(canonicalQA: FAQItem): Promise<string[]> {
     - **存储层**：向量库中，1 个“标准 Q&A”对应 N 个“泛化向量”。
     - **查询层**：用户提问优先匹配这 N 个“泛化向量”，一旦命中，立即路由到关联 of “标准 Q&A”。这种“多对一”的结构既保证了召回率，又避免了标准答案在检索结果中的冗余堆叠。
 
-###### **(5) 收益与量化指标**
+### (7) 收益与量化指标
 - **召回率提升**：实测表明，增加语义泛化后，Top-1 召回率从 **65%~70%** 跃升至 **92%~98%**。
 - **检索抗噪性**：系统对不规范表达、缩写和行业黑话的容忍度大幅提升。
 - **冷启动优化**：即使是全新的业务模块，通过 LLM 模拟用户问法，也能快速建立高质量的检索基准。
 
-##### 4.3.10.7 版本同步与增量更新 (CDC for FAQ)
+## 8 版本同步与增量更新 (CDC for FAQ)
 - **痛点**：FAQ 文档更新后，缓存中的旧答案可能导致严重的业务误导。
 - **对策**：
-    - **指纹校验**：为 FAQ 的每个单元（Row/Section）计算哈希值。
-    - **事件驱动同步**：监听文档变更事件（如 GitLab Webhook 或 SharePoint API），一旦检测到哈希变化，立即触发该条目及其泛化变体的**原子更新 (Atomic Update)**。
+    ### (1) 指纹校验与变更捕获
+- **指纹校验**：为 FAQ 的每个单元（Row/Section）计算哈希值。
+- **增量更新**：仅对哈希值发生变化的条目重新执行提取、泛化与入库流程。
+- **自动清理**：删除源文档中已不存在的条目，保持缓存与源头的一致性。
+- **事件驱动同步**：监听文档变更事件（如 GitLab Webhook 或 SharePoint API），一旦检测到哈希变化，立即触发该条目及其泛化变体的**原子更新 (Atomic Update)**。
 
-##### 4.3.10.8 角色驱动的差异化支持框架 (Role-Based Differentiation Framework)
+## 9 角色驱动的差异化支持框架 (Role-Based Differentiation Framework)
 
 在企业级场景中，不同角色的用户对知识有着截然不同的需求、查询习惯和合规要求。通过角色驱动的差异化支持，我们可以实现"千人千面"的精准知识服务。
 
-###### **(1) 角色画像与需求分析 (Role Personas & Requirements)**
+### (1) 角色画像与需求分析 (Role Personas & Requirements)
 
 | 角色 | 知识需求特征 | 典型查询模式 | 风险敏感度 | 核心诉求 |
 | :--- | :--- | :--- | :--- | :--- |
@@ -738,7 +652,7 @@ async function semanticGeneralization(canonicalQA: FAQItem): Promise<string[]> {
 | **法务部门 (Legal)** | 合同条款、合规要求、法律风险、条款解读 | 精确法条引用、条款编号、风险评估 | 极高（零误差要求） | 绝对准确的法律依据，完整的引用链 |
 | **风险合规 (Compliance)** | 监管政策、内控流程、审计要求、历史版本 | 政策编号、合规检查点、版本追溯 | 极高（溯源性要求） | 完整的版本历史和审计追踪 |
 
-###### **(2) 策略工厂的角色化配置 (Role-Aware Strategy Configuration)**
+### (2) 策略工厂的角色化配置 (Role-Aware Strategy Configuration)
 
 在语义泛化阶段，为不同角色生成最适合的变体：
 
@@ -762,7 +676,7 @@ function getRoleSpecificStrategies(role: string, category: string): Strategy[] {
 }
 ```
 
-###### **(3) 检索阶段的角色化权重 (Role-Based Retrieval Boosting)**
+### (3) 检索阶段的角色化权重 (Role-Based Retrieval Boosting)
 
 在向量检索时，为不同角色动态调整元数据权重：
 
@@ -798,7 +712,7 @@ async function roleAwareRetrieval(query: string, userRole: string, context: any)
 }
 ```
 
-###### **(4) 答案生成的角色化适配 (Role-Specific Answer Adaptation)**
+### (4) 答案生成的角色化适配 (Role-Specific Answer Adaptation)
 
 对检索结果进行角色化后处理：
 
@@ -820,7 +734,7 @@ function adaptAnswerForRole(answer: string, userRole: string, metadata?: any): s
 }
 ```
 
-###### **(5) 架构实现：角色上下文拦截器 (Role Context Interceptor)**
+### (5) 架构实现：角色上下文拦截器 (Role Context Interceptor)
 
 在查询处理流水线中插入角色感知层：
 
@@ -846,7 +760,7 @@ flowchart TD
     Auth -.->|"SSO/LDAP"| IAM["企业身份系统"]
 ```
 
-###### **(6) 实施路线图建议 (Implementation Roadmap)**
+### (6) 实施路线图建议 (Implementation Roadmap)
 
 1.  **Phase 1 - 基础角色区分**：实现 Sales/Support/Legal/Compliance 的基础策略路由
 2.  **Phase 2 - 元数据增强**：为知识库内容添加丰富的角色化元数据标签
@@ -854,7 +768,7 @@ flowchart TD
 4.  **Phase 4 - 智能适配**：完善答案生成的角色化后处理逻辑
 5.  **Phase 5 - 持续优化**：基于用户行为数据不断调整策略配置
 
-###### **(7) 治理与监控指标 (Governance & Monitoring)**
+### (7) 治理与监控指标 (Governance & Monitoring)
 
 - **角色覆盖率**：各角色用户问题得到满意回答的比例
 - **策略命中率**：不同策略生成变体的实际召回效果
@@ -863,11 +777,11 @@ flowchart TD
 - **规则**：**主动提取的“黄金答案”优先级 > 系统生成的“被动缓存”答案**。
 - **实现**：在语义检索时，为 Golden Cache 向量库设置更高的权重或优先检索。如果命中 Golden Cache，则不再执行后续的被动缓存查找。
 
-##### 4.3.10.9 主动式、多维度语义泛化深度分析 (Proactive Multi-Dimensional Semantic Generalization)
+## 10 深度分析：主动式多维度语义泛化 (In-depth Analysis)
 
 在"主动提取与黄金缓存"模式下，语义泛化不再是被动的实时处理，而是一个**预先计算 (Pre-computed)**、**全量覆盖 (Full Coverage)** 的工程过程。它根据预定义的 **用户角色列表 (User Role List)**、**文档类型 (Doc Type)** 和 **文档内容 (Content)**，通过一套复杂的策略工厂生成高质量的变体。
 
-###### **(1) 核心驱动三要素 (The Three Pillars)**
+### (1) 核心驱动三要素 (The Three Pillars)
 
 1.  **用户角色列表 (User Role List)**：
     - **作用**：决定泛化的"视角"。
@@ -879,7 +793,7 @@ flowchart TD
     - **作用**：提供泛化的"语义锚点"和"上下文坐标"。
     - **示例**：提取面包屑导航（Breadcrumbs）中的层级信息，将其注入 Prompt，确保泛化变体不会偏离业务域。
 
-###### **(2) 多维度扇出策略 (Multi-Dimensional Fan-out, MDF)**
+### (2) 多维度扇出策略 (Multi-Dimensional Fan-out, MDF)
 
 多维度扇出是指从一个标准问（Canonical Question）出发，沿着多个独立的维度进行指数级扩展：
 
@@ -891,7 +805,7 @@ flowchart TD
 | **语言维度 (Lingual)** | 多语言翻译与本地化 | "How to reset password?" (EN)、"パスワードの変更方法" (JP) |
 | **场景维度 (Contextual)** | 结合业务场景的变体 | "手机丢失了怎么紧急改密码？"、"新入职员工第一次改密码" |
 
-###### **(3) 语法结构变换模式 (Syntactic Structure Transformation, SST)**
+### (3) 语法结构变换模式 (Syntactic Structure Transformation, SST)
 
 SST 专注于在不改变核心语义的前提下，改变句子的骨架，以应对 LLM 在向量空间中对不同句式的敏感度差异：
 
@@ -900,7 +814,7 @@ SST 专注于在不改变核心语义的前提下，改变句子的骨架，以�
 -   **模式 C：长句拆解 (Decomposition)**：将复杂的复合句拆分为多个简单句变体。
 -   **模式 D：角色化语气注入 (Persona Injection)**：注入特定的开场白或语气词（如："请问..."、"求助！..."）。
 
-###### **(4) 动态策略工厂 (Dynamic Strategy Factory)**
+### (4) 动态策略工厂 (Dynamic Strategy Factory)
 
 策略工厂根据 `(Role, DocType, Content)` 三元组动态选择最优的泛化路径：
 
@@ -936,37 +850,37 @@ function getRecipe(role: string, docType: string, content: any): GeneralizationR
 }
 ```
 
-###### **(5) 预生成流水线 (Proactive Generation Pipeline)**
+### (5) 预生成流水线 (Proactive Generation Pipeline)
 
 ```mermaid
 flowchart LR
-    Start[标准问提取] --> Recipe[策略工厂计算 Recipe]
+    Start["标准问提取"] --> Recipe["策略工厂计算 Recipe"]
     
-    subgraph FanOut [多维度扇出过程]
-        Recipe --> S1[同义改写引擎]
-        Recipe --> S2[多语言翻译引擎]
-        Recipe --> S3[语法变换引擎]
-        Recipe --> S4[角色模拟引擎]
+    subgraph FanOut ["多维度扇出过程"]
+        Recipe --> S1["同义改写引擎"]
+        Recipe --> S2["多语言翻译引擎"]
+        Recipe --> S3["语法变换引擎"]
+        Recipe --> S4["角色模拟引擎"]
     end
     
-    S1 & S2 & S3 & S4 --> Merge[变体汇总]
-    Merge --> Filter[语义漂移过滤]
-    Filter --> Dedup[冲突与去重]
-    Dedup --> GoldenCache[(写入黄金缓存)]
+    S1 & S2 & S3 & S4 --> Merge["变体汇总"]
+    Merge --> Filter["语义漂移过滤"]
+    Filter --> Dedup["冲突与去重"]
+    Dedup --> GoldenCache[("写入黄金缓存")]
 ```
 
-###### **(6) 设计深度：为什么需要"主动"？**
+### (6) 设计深度：为什么需要"主动"？
 
 1.  **消除实时幻觉**：LLM 在实时生成时可能产生不稳定输出，预生成允许通过**人工审计 (Human-in-the-loop)** 确保黄金缓存的 100% 准确。
 2.  **极速响应**：查询时只需一次向量匹配，无需等待 LLM 生成，响应时间从秒级降至毫秒级。
 3.  **成本受控**：通过预先定义的 `user role list`，我们可以精确控制生成变体的数量，避免无限扇出导致的 Token 浪费。
 4.  **权限对齐**：在生成阶段就将权限边界（如：特定角色可见的变体）固化在元数据中，实现物理级别的安全隔离。
 
-##### 4.3.10.10 知识质量门禁 (Quality Gating)
+## 11 知识质量门禁 (Quality Gating)
 - **人工审计标记**：在 KV Store 中记录 `audited_by` 和 `audit_timestamp`。
 - **答案降级机制**：如果某个 FAQ 答案已超过 6 个月未审计，系统在返回答案时可以附加提示：“该信息基于 202X 年规定，建议咨询人工 HR 确认”。
 
-##### 4.3.10.11 直观对比：为什么需要“层级坐标”？
+## 12 直观对比：为什么需要“层级坐标”？
 
 ```mermaid
 graph LR
@@ -988,12 +902,12 @@ graph LR
     end
 
     User["用户提问:<br/>'如何重置?'"]
-    User -.->|检索碰撞| VectorA
-    User ==>|精准召回/消歧| VectorB1
-    User ==>|精准召回/消歧| VectorB2
+    User -.->|"检索碰撞"| VectorA
+    User ==>|"精准召回/消歧"| VectorB1
+    User ==>|"精准召回/消歧"| VectorB2
 ```
 
-##### 4.3.10.12 系统工业级稳健性：三大闭环机制 (System Robustness Closing-Loop Mechanisms)
+## 13 系统工业级稳健性：三大闭环机制 (System Robustness Mechanisms)
 
 为了确保主动生成的黄金缓存能够长期、稳健地运行，系统引入了三大进阶闭环机制，涵盖了从入库冲突检测到知识生命周期维护，再到流量驱动自进化的全链路治理。
 
@@ -1057,20 +971,20 @@ flowchart TD
     GoldenCache -.->|"关联原始指纹"| Fingerprint
 ```
 
-###### **(1) 语义冲突检测与消歧 (Conflict Disambiguation)**
+### (1) 语义冲突检测与消歧 (Conflict Disambiguation)
 当不同源文档的两个标准问生成了高度相似的变体时，会引发检索冲突。
 - **冲突扫描**：在变体入库前，与全量向量库进行相似度比对。
 - **处理策略**：
     - **强碰撞 (Sim > 0.98)**：强制合并或人工介入重新定义标准问。
     - **弱碰撞 (Sim 0.90-0.98)**：在元数据中标记 `potential_ambiguity`，检索时如果命中此类条目，Agent 将主动发起消歧反问（如："您是指 VPN 连接问题，还是指内网访问权限问题？"）。
 
-###### **(2) 知识指纹与增量更新 (Semantic Fingerprint & Incremental Update)**
+### (2) 知识指纹与增量更新 (Semantic Fingerprint & Incremental Update)
 解决文档频繁更新带来的泛化成本问题，实现 Embedding 算力的精确投放。
 - **语义指纹**：针对“标准问 + 核心答案”生成 Content Hash。
 - **版本关联**：所有泛化变体强关联至源节点的 `fingerprint_id`。
 - **增量同步**：仅对指纹发生变化的节点执行“失效 -> 重新生成”操作，确保缓存实时性且成本受控。
 
-###### **(3) 基于流量的自我进化 (Traffic-Driven Self-Evolution)**
+### (3) 基于流量的自我进化 (Traffic-Driven Self-Evolution)
 预生成的变体是基于模型推测的，而真实用户问法才是最终事实。
 - **影子变体反哺 (Shadow Variation Feedback)**：记录未直接命中缓存但通过 RAG 解决的真实用户 Query。
 - **自动化聚类**：将高频出现的真实问法自动聚合，并与现有的标准问匹配。
@@ -1078,11 +992,11 @@ flowchart TD
 
 ---
 
-##### 4.3.10.13 文档标准化抽象层 (Document Standardization Abstraction Layer)
+## 14 文档标准化抽象层 (Document Standardization Abstraction Layer)
 
 为了避免针对不同文档编写不同的 Prompt，我们引入了“文档标准化抽象层”。其核心思想是：将复杂的异构文档（HTML/Markdown/PDF）结构化为“标准分层树”，让提取逻辑只面向这棵树进行，从而实现跨格式的通用性。
 
-###### **(1) 通用化处理流水线 (Universal Pipeline)**
+### (1) 通用化处理流水线 (Universal Pipeline)
 
 ```mermaid
 flowchart TD
@@ -1111,13 +1025,7 @@ flowchart TD
     Global_Prompt --> Final_QA["(12) 标准化 FAQ 缓存条目"]:::output
 ```
 
----
-
-🤖 **协作说明**
-*本可视化文档基于架构师教授 `/prof` 的深度分析生成，并由 `vizdoc` 进行结构化与图表实现。*
-
-
-###### **(2) 标准分层树结构 (Normalized Tree Structure)**
+### (2) 标准分层树结构 (Normalized Tree Structure)
 在进入 LLM 之前，代码逻辑负责将所有文档转换为如下格式：
 ```json
 {
@@ -1132,17 +1040,17 @@ flowchart TD
 }
 ```
 
-###### **(3) “万能”提取 Prompt 的设计逻辑**
+### (3) “万能”提取 Prompt 的设计逻辑
 由于输入已经标准化，Prompt 只需要关注**逻辑映射**，无需关心**解析逻辑**。其核心指令应变为：
 
 > **“你现在的任务是处理一个已标准化的知识节点。该节点包含[层级坐标]和[原始内容]。请你将[原始内容]中的 Q&A 提取出来，并使用[层级坐标]对问题进行重构，确保其在全局范围内具有唯一的语义。”**
 
-###### **(4) 带来的核心收益**
+### (4) 带来的核心收益
 - **Prompt 稳定性**：无论文档是 10 层嵌套还是 2 层嵌套， Prompt 永远只看到一个数组和一段内容。
 - **逻辑解耦**：解析逻辑（处理 HTML 标签、正则匹配等）由高性能代码完成，LLM 只负责高价值的语义重构和泛化。
 - **跨格式复用**：PDF 解析出的层级和 HTML 解析出的层级，进入 LLM 时是完全等价的。
 
-##### 4.3.10.12 适配标准化协议的“万能”提取 Prompt 示例
+## 15 “万能”提取 Prompt 示例 (Universal Prompt Template)
 
 ```markdown
 ### Role: Universal FAQ Knowledge Architect
@@ -1169,7 +1077,7 @@ flowchart TD
 }
 ```
 
-##### 4.3.10.13 安全与合规 (Security & Compliance)
+## 16 安全与合规 (Security & Compliance)
 
 - 数据分级与脱敏：在入库前基于内容分级（Public/Internal/Confidential/PII）执行脱敏规则与术语规范化，生成 `policy_tags`（如 `PII_NONE`, `CONFIDENTIAL`）。
 - 访问控制与可见性：为每个缓存条目维护 `rbac.visibility` 与 `acl_fingerprint`，仅对权限匹配的用户开放检索与显示，防止“越权问答”。
@@ -1186,20 +1094,20 @@ flowchart TD
     SafetyGate -->|"不通过"| Escalate["人工复核队列"]
 ```
 
-##### 4.3.10.14 指标与监控 (Metrics & Monitoring)
+## 17 指标与监控 (Metrics & Monitoring)
 
 - 检索质量：Recall@K、MRR、Top-1 命中率、消歧触发率与成功率。
 - 稳定性与新鲜度：条目审计覆盖率、版本漂移率、`STALE` 标记率、平均更新时延。
 - 体验与成本：P50/P95 延迟、每次命中的推理/检索成本、缓存命中占比（Golden vs Passive）。
 - 漂移与异常：语义变体偏移分布、异常高相似度碰撞告警、注入疑似率与拦截率。
 
-##### 4.3.10.15 多语言适配 (Multilingual Support)
+## 18 多语言适配 (Multilingual Support)
 
 - 语言无关的路径：`breadcrumb` 永远使用业务主语言或代码化路径，避免翻译导致坐标漂移。
 - 变体与答案分语种：`variations` 与 `answer` 支持 `lang` 字段，按会话语言优先返回对应语种。
 - 跨语向量：使用跨语 Embedding 或分别维护多语索引并做路由；确保不同语种命中后统一回到同一 `canonical_question`。
 
-##### 4.3.10.16 黄金缓存条目数据模型 (Schema)
+## 19 黄金缓存条目数据模型 (Data Schema)
 
 ```json
 {
@@ -1254,33 +1162,33 @@ flowchart TD
 }
 ```
 
-##### 4.3.10.17 运行策略与成本优化 (Ops & Cost)
+## 20 运行策略与成本优化 (Ops & Cost Optimization)
 
 - 批处理优先：变体生成与批量 Embedding 采用离线批处理，结合队列与重试，降低峰值成本。
 - 去重与指纹：对标准问与变体做规范化与去重，减少索引膨胀与相似向量冗余。
 - 索引与召回：合理配置 ANN 参数（如 HNSW 的 M、ef）与多级索引（父/子），在成本与质量间权衡。
 - 灰度与回滚：新版本条目先小流量灰度（Canary），异常率升高时自动回滚到上一版本。
 
-##### 4.3.10.18 人机协同与反馈回路 (Human-in-the-loop)
+## 21 人机协同与反馈回路 (Human-in-the-loop)
 
 - 低置信度上报：当消歧失败或相似度低于阈值，收集用户选择与失败样本，进入编辑队列。
 - 运营面板：提供条目级别的修改建议、同义词维护与黑词维护，持续提升召回与精度。
 - 反馈事件：记录 `feedback_event`（命中失败、答案不满意、路径纠正），驱动后续再训练或规则更新。
 
-##### 4.3.10.19 与企业缓存分层的协同 (Integration with Caching Layers)
+## 22 与企业缓存分层的协同 (Enterprise Cache Integration)
 
 - 优先级策略：Golden Cache 命中优先于 Passive Cache；未命中时再走被动缓存与完整 RAG 流程。
 - 分层协同：结合企业缓存分层（如 L1 域内公共区、L2 权限隔离区、L3 会话区），为 Golden Cache 条目设置合适的 TTL 与可见性边界。
 - 冲突与失效：当上游政策变化或文档更新触发冲突，标记 `STALE_BY_CONFLICT` 并触发静默预热与原子更新（CDC）。
 
-##### 4.3.10.20 向量库存储结构与查询 (Vector DB Storage & Query)
+## 23 向量库存储结构与查询 (Storage & Query Implementation)
 
-**存储布局：父-子索引**
+### (1) 存储布局：父-子索引
 - 子索引 `gc_variations`：存储所有语义变体向量，字段包含 `id, parent_id, text, embedding, lang, breadcrumb, category, tags, rbac_visibility, policy_tags, created_at`。
 - 父索引 `gc_canonical`：存储标准问与标准答，字段包含 `id, canonical_question, answer_text, metadata, rbac_visibility, audit, version`。
 - 查询命中子索引后，路由到父索引返回标准答案；支持基于 `breadcrumb/category/rbac_visibility` 的前置过滤与后置消歧。
 
-**Postgres + pgvector 建模示例**
+### (2) Postgres + pgvector 建模示例
 
 ```sql
 create extension if not exists vector;
@@ -1315,7 +1223,7 @@ create index if not exists idx_gc_variations_parent on gc_variations(parent_id);
 create index if not exists idx_gc_canonical_visibility on gc_canonical(rbac_visibility);
 ```
 
-**查询样例：带过滤的近邻检索**
+### (3) 查询样例：带过滤的近邻检索
 
 ```sql
 with candidates as (
@@ -1336,7 +1244,7 @@ where p.rbac_visibility = $2
 order by c.distance asc;
 ```
 
-**查询管线伪代码（TS）**
+### (4) 查询管线伪代码 (TS)
 
 ```typescript
 type QueryFilters = {
@@ -1374,7 +1282,7 @@ async function searchGoldenCache(q: number[], f: QueryFilters) {
 }
 ```
 
-**Milvus 建模与查询示例**
+### (5) Milvus 建模与查询示例
 
 ```python
 from pymilvus import connections, FieldSchema, CollectionSchema, DataType, Collection
@@ -1403,14 +1311,14 @@ res = col.search(
 )
 ```
 
-**关键查询策略**
+### (6) 关键查询策略
 - 先过滤后相似：利用 `rbac_visibility/category/breadcrumb` 过滤减少误召回，再做近邻检索。
 - 子命中父路由：命中变体后返回其父条目的标准问答，保证稳定与唯一。
 - 碰撞消歧：Top-2 距离接近时触发澄清交互，利用元数据生成选项。
 
-##### 4.3.10.21 字段释义与设计价值 (Field Semantics & Value)
+## 24 字段释义与设计价值 (Field Semantics & Value)
 
-**gc_canonical（标准问答父索引）**
+### (1) gc_canonical（标准问答父索引）
 - id：父条目唯一标识；用于路由与溯源，避免重复与覆盖。
 - canonical_question：全局唯一的标准问题；消除同名冲突，作为知识锚点。
 - answer_text：权威标准答案；确保一致性与可控的输出。
@@ -1424,7 +1332,7 @@ res = col.search(
 - version：内容版本号；支持回滚与灰度发布。
 - created_at：创建时间；用于生命周期管理与新鲜度评估。
 
-**gc_variations（语义变体子索引）**
+### (2) gc_variations（语义变体子索引）
 - id：子条目唯一标识；用于诊断与治理（去重、黑词维护）。
 - parent_id：父子关联键；命中后路由到标准问答，保证结果一致性。
 - text：变体文本；覆盖口语/错别字/行业黑话等多样问法。
@@ -1437,13 +1345,13 @@ res = col.search(
 - policy_tags text[]：策略标签（如 PII_NONE）；用于入库门禁与返回提示。
 - created_at：创建时间；用于变体新鲜度与清理策略。
 
-**黄金缓存条目模型（治理视角）**
+### (3) 黄金缓存条目模型（治理视角）
 - embedding.model / model_version / vector_id / created_at：向量生成的可追溯性；便于批量重嵌与一致性检查。
 - policy.effective_from / effective_to / ttl_hours：有效期与缓存策略；控制答案“新鲜度”与过期逻辑。
 - quality.recall_at_1 / disambiguation_rate：质量指标；指导泛化策略与澄清触发阈值。
 - status.lifecycle / stale_reason：生命周期状态与失效原因；驱动 CDC 与回滚。
 
-###### 图示：存储架构总览
+### (4) 图示：存储架构总览
 
 ```mermaid
 flowchart LR
@@ -1461,7 +1369,7 @@ flowchart LR
     Variation -->|"parent_id 指向"| Canonical:::relation
 ```
 
-###### 图示：查询与路由时序
+### (5) 图示：查询与路由时序
 
 ```mermaid
 sequenceDiagram
@@ -1478,9 +1386,9 @@ sequenceDiagram
     Engine-->>User: "若 Top2 距离 接近 则 触发 澄清 选项"
 ```
 
-##### 4.3.10.22 变体向量生成伪代码 (Embedding Generation for Variations)
+## 25 变体向量生成伪代码 (Embedding Generation for Variations)
 
-###### 设计原理与关键决策
+### (1) 设计原理与关键决策
 
 **为什么需要路径注入？**
 - **语义隔离**：防止不同业务域的相似问题产生冲突（如"重置密码"在用户管理和设备管理中的不同含义）
@@ -1769,7 +1677,7 @@ def insert_batch(conn, rows: List[Dict[str, Any]]) -> None:
         cur.close()
 ```
 
-###### 实际应用示例
+### (2) 实际应用示例
 
 **场景：企业IT支持FAQ**
 
@@ -1808,7 +1716,7 @@ const variations = [
 // 变体2："在[IT支持][网络][VPN]中，重置VPN登录密码"
 ```
 
-###### 性能优化建议
+### (3) 性能优化建议
 
 1. **批量处理**：使用批量嵌入生成（如OpenAI的batch API）
 2. **异步处理**：对于大规模数据，使用异步任务队列
@@ -1816,9 +1724,9 @@ const variations = [
 4. **增量更新**：只处理新增或修改的FAQ内容
 5. **监控告警**：监控语义漂移率，及时发现数据质量问题
 
-##### 4.3.10.23 部署与运维指南 (Deployment & Operations)
+## 26 部署与运维指南 (Deployment & Operations)
 
-###### 环境要求
+### (1) 环境要求
 
 - **数据库**：PostgreSQL 12+ with pgvector 扩展
 - **向量维度**：3072（适配OpenAI text-embedding-3-large）
@@ -1827,14 +1735,14 @@ const variations = [
   - RAM: 16GB+ （取决于数据量）
   - Storage: SSD 存储，确保索引性能
 
-###### 部署步骤
+### (2) 部署步骤
 
 1. **数据库初始化**
 ```bash
 # 安装pgvector扩展
 CREATE EXTENSION IF NOT EXISTS vector;
 
-# 创建表结构（见前文4.3.10.19节）
+# 创建表结构（见前文 1.23 节）
 ```
 
 2. **嵌入服务配置**
@@ -1865,7 +1773,7 @@ EXPOSE 3000
 CMD ["npm", "start"]
 ```
 
-###### 监控与告警
+### (3) 监控与告警
 
 **关键指标**：
 - `faq_embedding_generation_duration`：嵌入生成耗时
@@ -1878,7 +1786,7 @@ CMD ["npm", "start"]
 - 嵌入生成耗时 > 5s/100条：性能警告
 - 缓存命中率 < 60%：可能需要优化变体覆盖
 
-##### 4.3.10.24 核心术语表 (Glossary)
+## 27 核心术语表 (Glossary)
 
 | 术语 | 英文 | 定义 | 示例/说明 |
 |------|------|------|-----------|
@@ -1888,19 +1796,19 @@ CMD ["npm", "start"]
 | **语义变体** | Semantic Variation | 同一问题的不同表达方式 | "VPN密码重置" vs "忘记VPN密码怎么办" |
 | **语义漂移** | Semantic Drift | 变体与标准问题的语义偏离程度 | 余弦相似度 < 0.75 |
 | **父-子索引** | Parent-Child Index | 标准问题与变体的关联结构 | gc_canonical ← gc_variations |
-| **过滤优先** | Filter-First Strategy | 先基于元数据过滤，再相似度搜索 | 减少计算量和误召回 |
+| **过滤优先** | Filter-First Strategy | 先基于元数据过滤，再相似度搜索 | 减少计算量 and 误召回 |
 | **消歧服务** | Disambiguation Service | 处理模糊查询的交互式澄清 | "您是指用户密码还是设备密码？" |
 
-##### 4.3.10.25 设计原则总结 (Design Principles)
+## 28 设计原则总结 (Design Principles)
 
-###### 核心设计理念
+### (1) 核心设计理念
 
 1. **确定性优先**：黄金缓存的核心价值在于提供确定性的准确回答，牺牲一定的覆盖率来保证质量
 2. **上下文编码**：将业务上下文直接注入文本，避免依赖外部元数据查询，提高召回精度
 3. **质量闭环**：内置语义漂移检测和监控，形成自我优化的质量控制系统
 4. **企业治理**：从设计之初就考虑RBAC、审计、合规等企业级需求
 
-###### 技术选型考量
+### (2) 技术选型考量
 
 **为什么选择 pgvector？**
 - **事务一致性**：向量操作与业务数据在同一个事务中
@@ -1913,7 +1821,7 @@ CMD ["npm", "start"]
 - **性能平衡**：在召回精度和计算成本之间取得平衡
 - **未来兼容**：预留足够的维度空间应对模型升级
 
-###### 成功指标 (Success Metrics)
+### (3) 成功指标 (Success Metrics)
 
 **核心业务指标**：
 - ⬆️ **缓存命中率**：目标 > 80%
@@ -1926,7 +1834,7 @@ CMD ["npm", "start"]
 - ⬆️ **向量索引命中率**：目标 > 95%
 - ⬇️ **错误回答率**：目标 < 1%
 
-###### 演进路线 (Evolution Roadmap)
+### (4) 演进路线 (Evolution Roadmap)
 
 **短期优化 (1-3个月)**：
 - 实现增量更新机制
@@ -1943,7 +1851,7 @@ CMD ["npm", "start"]
 - 自动化质量评估
 - 智能变体生成优化
 
-##### 4.3.10.26 教育价值总结 (Educational Value)
+## 29 教育价值总结 (Educational Value)
 
 本方案为学习者展示了：
 
@@ -1958,4 +1866,4 @@ CMD ["npm", "start"]
 ---
 
 **🤖 协作说明**
-> *本可视化文档基于架构师教授 `/prof` 的深度分析生成，并由 `vizdoc` 进行结构化与图表实现。*
+*本可视化文档基于架构师教授 `/prof` 的深度分析生成，并由 `vizdoc` 进行结构化与图表实现。*
